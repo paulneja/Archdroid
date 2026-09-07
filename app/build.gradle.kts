@@ -28,6 +28,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     compileOptions {
@@ -69,7 +70,9 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
 
     implementation(libs.backdrop)
+    implementation(libs.kyant.shapes)
     implementation(libs.libsu.core)
+    implementation(libs.libsu.busybox)
     implementation(libs.termux.terminal.view)
     implementation(libs.guava.listenablefuture.fix)
 

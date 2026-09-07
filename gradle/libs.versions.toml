@@ -10,6 +10,7 @@ navigationCompose = "2.8.9"
 datastore = "1.1.4"
 backdrop = "2.0.1"
 libsu = "6.0.0"
+libsuBusybox = "5.0.0"
 terminalView = "0.118.0"
 okhttp = "4.12.0"
 coroutines = "1.10.2"
@@ -29,7 +30,9 @@ androidx-compose-material-icons-extended = { group = "androidx.compose.material"
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 backdrop = { group = "io.github.kyant0", name = "backdrop", version.ref = "backdrop" }
+kyant-shapes = { group = "io.github.kyant0", name = "shapes", version = "1.2.1" }
 libsu-core = { group = "com.github.topjohnwu.libsu", name = "core", version.ref = "libsu" }
+libsu-busybox = { group = "com.github.topjohnwu.libsu", name = "busybox", version.ref = "libsuBusybox" }
 termux-terminal-view = { group = "com.termux.termux-app", name = "terminal-view", version.ref = "terminalView" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }

@@ -1,4 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ArchDroid</string>
+    <string name="wip">Work in progress…</string>
+
+    <string name="nav_home">Home</string>
+    <string name="nav_terminal">Terminal</string>
+    <string name="nav_settings">Settings</string>
+
+    <string name="checking_root">Checking root access…</string>
+    <string name="root_required_title">Root access required</string>
+    <string name="root_required_body">ArchDroid needs root to mount and enter the Arch Linux chroot. Grant access via Magisk, KernelSU or APatch and try again.</string>
+    <string name="retry">Retry</string>
+
+    <string name="home_subtitle">Arch Linux ARM in a real chroot</string>
+    <string name="status_label">Status</string>
+    <string name="status_mounted">Mounted</string>
+    <string name="status_installed">Installed</string>
+    <string name="status_not_installed">Not installed</string>
+    <string name="distro_label">Distro</string>
+    <string name="path_label">Path</string>
+    <string name="kernel_label">Kernel</string>
+    <string name="disk_label">Disk usage</string>
+
+    <string name="not_installed_title">Arch Linux is not installed yet</string>
+    <string name="not_installed_body">The installer will download the official Arch Linux ARM rootfs (~800 MB), extract it to /data/local/arch and set everything up.</string>
+    <string name="install_arch">Install Arch Linux</string>
+    <string name="open_terminal">Open terminal</string>
+    <string name="mount_chroot">Mount chroot</string>
+    <string name="unmount_chroot">Unmount chroot</string>
+
+    <string name="terminal_preparing">Preparing chroot…</string>
+    <string name="terminal_mount_error">Failed to prepare chroot:\n%1$s</string>
+    <string name="terminal_new_tab">New tab</string>
+    <string name="terminal_close_tab">Close tab</string>
+
+    <string name="wizard_title">Install Arch Linux</string>
+    <string name="wizard_step">Step %1$d of %2$d</string>
+    <string name="wizard_welcome_body">This wizard downloads the official Arch Linux ARM rootfs (~800 MB), extracts it to /data/local/arch and prepares a ready-to-use chroot.</string>
+    <string name="wizard_req_root">Root access granted</string>
+    <string name="wizard_req_space">Free space on /data: %1$s (2.5 GB required)</string>
+    <string name="wizard_req_kernel">Kernel: %1$s</string>
+    <string name="wizard_req_network">Wi-Fi connection recommended</string>
+    <string name="wizard_next">Next</string>
+    <string name="wizard_back">Back</string>
+    <string name="wizard_mirror_label">Mirror URL</string>
+    <string name="wizard_mirror_body">The rootfs tarball will be downloaded from this mirror. The default redirects to a nearby official mirror.</string>
+    <string name="wizard_packages_body">Extra packages installed with pacman right after the base system.</string>
+    <string name="wizard_username">Username</string>
+    <string name="wizard_password">Password</string>
+    <string name="wizard_user_hint">Lowercase letters, digits, - and _. The user gets sudo via the wheel group.</string>
+    <string name="wizard_login_as_root">Log in as root instead</string>
+    <string name="wizard_install">Install</string>
+    <string name="step_download">Downloading rootfs</string>
+    <string name="step_verify">Verifying checksum</string>
+    <string name="step_extract">Extracting rootfs</string>
+    <string name="step_base_config">Configuring base system</string>
+    <string name="step_user">Creating user</string>
+    <string name="step_packages">Installing packages</string>
+    <string name="step_cleanup">Cleaning up</string>
+    <string name="downloaded_progress">%1$s / %2$s</string>
+    <string name="wizard_done_title">Arch Linux installed</string>
+    <string name="wizard_done_body">Your chroot at /data/local/arch is ready. Open the terminal to start using it.</string>
+    <string name="wizard_failed_title">Installation failed</string>
+    <string name="wizard_finish">Finish</string>
 </resources>
