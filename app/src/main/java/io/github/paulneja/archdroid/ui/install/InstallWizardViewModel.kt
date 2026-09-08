@@ -23,11 +23,8 @@ class InstallWizardViewModel(app: Application) : AndroidViewModel(app) {
     private val installer = ChrootInstaller(app)
 
     companion object {
-        val AVAILABLE_PACKAGES = listOf(
-            "base-devel", "git", "vim", "nano", "openssh", "wget", "curl",
-            "zsh", "tmux", "htop", "fastfetch", "python",
-        )
-        const val MIN_FREE_BYTES = 2_500_000_000L
+        val AVAILABLE_PACKAGES = InstallPlan.AVAILABLE_PACKAGES
+        const val MIN_FREE_BYTES = InstallPlan.MIN_FREE_BYTES
     }
 
     data class UiState(
@@ -74,15 +71,10 @@ class InstallWizardViewModel(app: Application) : AndroidViewModel(app) {
     fun setPassword(password: String) = _ui.update { it.copy(password = password) }
     fun setLoginAsRoot(login: Boolean) = _ui.update { it.copy(loginAsRoot = login) }
 
-    fun usernameValid(): Boolean {
-        val u = _ui.value.username
-        return u.matches(Regex("[a-z_][a-z0-9_-]{0,31}"))
-    }
+    fun usernameValid(): Boolean = InstallPlan.usernameValid(_ui.value.username)
 
-    fun canInstall(): Boolean {
-        val s = _ui.value
-        return s.freeBytes >= MIN_FREE_BYTES &&
-                (s.loginAsRoot || (usernameValid() && s.password.length >= 4))
+    fun canInstall(): Boolean = _ui.value.let {
+        InstallPlan.canInstall(it.freeBytes, it.username, it.password, it.loginAsRoot)
     }
 
     fun install() {
@@ -93,7 +85,7 @@ class InstallWizardViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val config = InstallConfig(
                 mirror = s.mirror.trim().ifBlank { ChrootPaths.DEFAULT_MIRROR },
-                packages = s.selectedPackages.toList(),
+                packages = InstallPlan.packagesFor(s.selectedPackages, s.loginAsRoot),
                 username = if (s.loginAsRoot) "" else s.username.trim(),
                 password = s.password,
                 env = EnvConfig(),
@@ -102,8 +94,7 @@ class InstallWizardViewModel(app: Application) : AndroidViewModel(app) {
                 _ui.update { state ->
                     state.copy(
                         progress = progress,
-                        log = (state.log + progress.step.name.lowercase() +
-                                (if (progress.detail.isBlank()) "" else ": ${progress.detail}"))
+                        log = (state.log + InstallPlan.logLine(progress.step.name, progress.detail))
                             .takeLast(200),
                     )
                 }
