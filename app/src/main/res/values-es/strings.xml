@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ArchDroid</string>
+    <string name="wip">Trabajo en progreso…</string>
+
+    <string name="nav_home">Inicio</string>
+    <string name="nav_terminal">Terminal</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <string name="checking_root">Verificando acceso root…</string>
+    <string name="root_required_title">Se requiere root</string>
+    <string name="root_required_body">ArchDroid necesita root para montar y entrar al chroot de Arch Linux. Otorgá acceso con Magisk, KernelSU o APatch y reintentá.</string>
+    <string name="retry">Reintentar</string>
+
+    <string name="home_subtitle">Arch Linux ARM en un chroot real</string>
+    <string name="status_label">Estado</string>
+    <string name="status_mounted">Montado</string>
+    <string name="status_installed">Instalado</string>
+    <string name="status_not_installed">No instalado</string>
+    <string name="distro_label">Distro</string>
+    <string name="path_label">Ruta</string>
+    <string name="kernel_label">Kernel</string>
+    <string name="disk_label">Uso de disco</string>
+
+    <string name="not_installed_title">Arch Linux no está instalado</string>
+    <string name="not_installed_body">El instalador descarga el rootfs oficial de Arch Linux ARM (~800 MB), lo extrae en /data/local/arch y deja todo listo.</string>
+    <string name="install_arch">Instalar Arch Linux</string>
+    <string name="open_terminal">Abrir terminal</string>
+    <string name="mount_chroot">Montar chroot</string>
+    <string name="unmount_chroot">Desmontar chroot</string>
+
+    <string name="terminal_preparing">Preparando chroot…</string>
+    <string name="terminal_mount_error">No se pudo preparar el chroot:\n%1$s</string>
+    <string name="terminal_new_tab">Nueva pestaña</string>
+    <string name="terminal_close_tab">Cerrar pestaña</string>
+
+    <string name="wizard_title">Instalar Arch Linux</string>
+    <string name="wizard_step">Paso %1$d de %2$d</string>
+    <string name="wizard_welcome_body">Este asistente descarga el rootfs oficial de Arch Linux ARM (~800 MB), lo extrae en /data/local/arch y deja un chroot listo para usar.</string>
+    <string name="wizard_req_root">Acceso root concedido</string>
+    <string name="wizard_req_space">Espacio libre en /data: %1$s (se requieren 2.5 GB)</string>
+    <string name="wizard_req_kernel">Kernel: %1$s</string>
+    <string name="wizard_req_network">Se recomienda conexión Wi-Fi</string>
+    <string name="wizard_next">Siguiente</string>
+    <string name="wizard_back">Atrás</string>
+    <string name="wizard_mirror_label">URL del mirror</string>
+    <string name="wizard_mirror_body">El tarball del rootfs se descarga de este mirror. El predeterminado redirige a un mirror oficial cercano.</string>
+    <string name="wizard_packages_body">Paquetes extra instalados con pacman apenas termina el sistema base.</string>
+    <string name="wizard_username">Usuario</string>
+    <string name="wizard_password">Contraseña</string>
+    <string name="wizard_user_hint">Minúsculas, números, - y _. El usuario obtiene sudo vía el grupo wheel.</string>
+    <string name="wizard_login_as_root">Entrar como root</string>
+    <string name="wizard_install">Instalar</string>
+    <string name="step_download">Descargando rootfs</string>
+    <string name="step_verify">Verificando checksum</string>
+    <string name="step_extract">Extrayendo rootfs</string>
+    <string name="step_base_config">Configurando sistema base</string>
+    <string name="step_user">Creando usuario</string>
+    <string name="step_packages">Instalando paquetes</string>
+    <string name="step_cleanup">Limpiando</string>
+    <string name="downloaded_progress">%1$s / %2$s</string>
+    <string name="wizard_done_title">Arch Linux instalado</string>
+    <string name="wizard_done_body">Tu chroot en /data/local/arch está listo. Abrí la terminal para empezar a usarlo.</string>
+    <string name="wizard_failed_title">La instalación falló</string>
+    <string name="wizard_finish">Finalizar</string>
+
+    <string name="settings_mounts">Montajes</string>
+    <string name="settings_env">Entorno</string>
+    <string name="settings_user">Usuario</string>
+    <string name="settings_behavior">Autoinicio y scripts</string>
+    <string name="settings_backup">Backup y reset</string>
+    <string name="settings_about">Acerca de</string>
+    <string name="settings_dynamic_color">Color dinámico (Material You)</string>
+
+    <string name="mounts_fs_title">Sistema de archivos</string>
+    <string name="mounts_shm_size">Tamaño de /dev/shm: %1$d MB</string>
+    <string name="mounts_shared_title">Bind de almacenamiento compartido</string>
+    <string name="mounts_shared_enable">Montar el almacenamiento de Android en el chroot</string>
+    <string name="mounts_shared_source">Ruta origen en Android</string>
+    <string name="mounts_shared_target">Ruta destino en el chroot</string>
+    <string name="mounts_shared_ro">Solo lectura</string>
+
+    <string name="env_system_title">Sistema</string>
+    <string name="env_hostname">Hostname</string>
+    <string name="env_dns1">DNS primario</string>
+    <string name="env_dns2">DNS secundario</string>
+    <string name="env_lang">LANG</string>
+    <string name="env_extra_title">Variables de entorno extra</string>
+
+    <string name="user_new_password">Nueva contraseña</string>
+    <string name="user_change_password">Cambiar contraseña</string>
+
+    <string name="behavior_autostart">Montar chroot al iniciar</string>
+    <string name="behavior_autostart_hint">Requiere que tu solución de root conceda superusuario a ArchDroid automáticamente al arrancar.</string>
+    <string name="behavior_scripts_title">Scripts personalizados</string>
+    <string name="behavior_startup_script">Script de inicio (corre dentro del chroot)</string>
+    <string name="behavior_shutdown_script">Script de apagado</string>
+
+    <string name="backup_body">Exporta todo el rootfs como .tar.gz para restaurar después o mover a otro dispositivo. Los backups pueden ser grandes.</string>
+    <string name="backup_export">Exportar backup</string>
+    <string name="backup_import">Restaurar desde backup</string>
+    <string name="backup_done">Listo</string>
+    <string name="reset_title">Resetear chroot</string>
+    <string name="reset_body">Borra /data/local/arch por completo, incluidos todos los archivos del chroot.</string>
+    <string name="reset_confirm_body">Esto no se puede deshacer. ¿Borrar toda la instalación de Arch Linux?</string>
+    <string name="reset_button">Borrar todo</string>
+    <string name="cancel">Cancelar</string>
+
+    <string name="about_body">Arch Linux ARM (aarch64) corriendo en un chroot real en %1$s. El chroot sobrevive a la desinstalación de la app; solo \"Resetear chroot\" lo elimina.</string>
+    <string name="about_limits_title">Limitaciones conocidas</string>
+    <string name="about_limits_body">No hay systemd dentro de un chroot (usá scripts para los servicios). Kernels anteriores a 4.14 pueden romper llamadas de glibc nuevas. Kernels compilados sin CONFIG_SYSVIPC no pueden correr bases de datos como PostgreSQL.</string>
+    <string name="about_credits_title">Créditos</string>
+</resources>

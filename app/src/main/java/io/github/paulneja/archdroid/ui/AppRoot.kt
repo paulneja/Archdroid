@@ -36,7 +36,13 @@ import io.github.paulneja.archdroid.ui.components.GlassNavItem
 import io.github.paulneja.archdroid.ui.home.HomeScreen
 import io.github.paulneja.archdroid.ui.install.InstallWizardScreen
 import io.github.paulneja.archdroid.ui.onboarding.RootCheckScreen
+import io.github.paulneja.archdroid.ui.settings.AboutScreen
+import io.github.paulneja.archdroid.ui.settings.BackupScreen
+import io.github.paulneja.archdroid.ui.settings.BehaviorScreen
+import io.github.paulneja.archdroid.ui.settings.EnvScreen
+import io.github.paulneja.archdroid.ui.settings.MountsScreen
 import io.github.paulneja.archdroid.ui.settings.SettingsScreen
+import io.github.paulneja.archdroid.ui.settings.UserScreen
 import io.github.paulneja.archdroid.ui.terminal.TerminalScreen
 import io.github.paulneja.archdroid.ui.theme.ArchDroidTheme
 import io.github.paulneja.archdroid.ui.theme.BgDeepBottom
@@ -111,6 +117,24 @@ private fun MainScaffold(viewModel: AppViewModel) {
             }
             composable(Routes.SETTINGS) {
                 SettingsScreen(backdrop = backdrop, onOpenSection = { navController.navigate(it) })
+            }
+            composable(Routes.SETTINGS_MOUNTS) {
+                MountsScreen(backdrop = backdrop, onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_ENV) {
+                EnvScreen(backdrop = backdrop, onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_USER) {
+                UserScreen(backdrop = backdrop, onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_BEHAVIOR) {
+                BehaviorScreen(backdrop = backdrop, onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_BACKUP) {
+                BackupScreen(backdrop = backdrop, onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_ABOUT) {
+                AboutScreen(backdrop = backdrop, onBack = { navController.popBackStack() })
             }
         }
 

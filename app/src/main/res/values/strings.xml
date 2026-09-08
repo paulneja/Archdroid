@@ -63,4 +63,51 @@
     <string name="wizard_done_body">Your chroot at /data/local/arch is ready. Open the terminal to start using it.</string>
     <string name="wizard_failed_title">Installation failed</string>
     <string name="wizard_finish">Finish</string>
+
+    <string name="settings_mounts">Mounts</string>
+    <string name="settings_env">Environment</string>
+    <string name="settings_user">User</string>
+    <string name="settings_behavior">Autostart &amp; scripts</string>
+    <string name="settings_backup">Backup &amp; reset</string>
+    <string name="settings_about">About</string>
+    <string name="settings_dynamic_color">Dynamic color (Material You)</string>
+
+    <string name="mounts_fs_title">Filesystem</string>
+    <string name="mounts_shm_size">/dev/shm size: %1$d MB</string>
+    <string name="mounts_shared_title">Shared storage bind</string>
+    <string name="mounts_shared_enable">Bind Android storage into the chroot</string>
+    <string name="mounts_shared_source">Android source path</string>
+    <string name="mounts_shared_target">Chroot target path</string>
+    <string name="mounts_shared_ro">Read-only</string>
+
+    <string name="env_system_title">System</string>
+    <string name="env_hostname">Hostname</string>
+    <string name="env_dns1">Primary DNS</string>
+    <string name="env_dns2">Secondary DNS</string>
+    <string name="env_lang">LANG</string>
+    <string name="env_extra_title">Extra environment variables</string>
+
+    <string name="user_new_password">New password</string>
+    <string name="user_change_password">Change password</string>
+
+    <string name="behavior_autostart">Mount chroot on boot</string>
+    <string name="behavior_autostart_hint">Requires your root solution to grant ArchDroid superuser automatically at boot.</string>
+    <string name="behavior_scripts_title">Custom scripts</string>
+    <string name="behavior_startup_script">Startup script (runs inside chroot)</string>
+    <string name="behavior_shutdown_script">Shutdown script</string>
+
+    <string name="backup_body">Export the whole rootfs as a .tar.gz you can restore later or move to another device. Backups can be large.</string>
+    <string name="backup_export">Export backup</string>
+    <string name="backup_import">Restore from backup</string>
+    <string name="backup_done">Done</string>
+    <string name="reset_title">Reset chroot</string>
+    <string name="reset_body">Deletes /data/local/arch completely, including all files inside the chroot.</string>
+    <string name="reset_confirm_body">This cannot be undone. Delete the entire Arch Linux installation?</string>
+    <string name="reset_button">Delete everything</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="about_body">Arch Linux ARM (aarch64) running in a real chroot at %1$s. The chroot survives app uninstalls; only \"Reset chroot\" removes it.</string>
+    <string name="about_limits_title">Known limitations</string>
+    <string name="about_limits_body">No systemd inside a chroot (use plain scripts for services). Kernels older than 4.14 may break newer glibc calls. Kernels built without CONFIG_SYSVIPC cannot run databases like PostgreSQL.</string>
+    <string name="about_credits_title">Credits</string>
 </resources>
