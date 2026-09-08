@@ -110,4 +110,12 @@
     <string name="about_limits_title">Limitaciones conocidas</string>
     <string name="about_limits_body">No hay systemd dentro de un chroot (usá scripts para los servicios). Kernels anteriores a 4.14 pueden romper llamadas de glibc nuevas. Kernels compilados sin CONFIG_SYSVIPC no pueden correr bases de datos como PostgreSQL.</string>
     <string name="about_credits_title">Créditos</string>
+    <string name="reset_confirm_final_title">Última oportunidad</string>
+    <string name="reset_confirm_final_body">Se va a borrar todo el rootfs de /data/local/arch. Los paquetes instalados, tu carpeta personal y todo lo que hayas guardado dentro de Arch se pierden para siempre.</string>
+    <string name="reset_confirm_final_button">Borrar todo</string>
+    <string name="mounts_busy_title">Montajes activos</string>
+    <string name="mounts_busy_body">No se borró nada. Estos puntos de montaje siguen activos dentro del chroot — borrar los atravesaría y llegaría al sistema de archivos real. Desmontá desde Inicio y probá de nuevo.</string>
+    <string name="mounts_active_title">Activos ahora</string>
+    <string name="mounts_active_empty">Nada montado</string>
+    <string name="mounts_refresh">Actualizar</string>
 </resources>

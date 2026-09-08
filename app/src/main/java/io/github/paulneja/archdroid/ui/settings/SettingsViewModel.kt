@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.paulneja.archdroid.core.chroot.ChrootController
 import io.github.paulneja.archdroid.core.chroot.ChrootStatus
 import io.github.paulneja.archdroid.core.chroot.MountManager
+import io.github.paulneja.archdroid.core.util.ShellQuote.quote
 import io.github.paulneja.archdroid.data.SettingsRepository
 import io.github.paulneja.archdroid.data.model.AppSettings
 import io.github.paulneja.archdroid.data.model.BehaviorConfig
@@ -40,10 +41,27 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         data class Running(val label: String) : BackupState
         data class Success(val message: String) : BackupState
         data class Error(val message: String) : BackupState
+
+        /** Refused: something is still mounted under the chroot, deleting would escape it. */
+        data class MountsBusy(val points: List<String>) : BackupState
     }
 
     private val _backupState = MutableStateFlow<BackupState>(BackupState.Idle)
     val backupState = _backupState.asStateFlow()
+
+    /** What is actually mounted under the chroot right now, straight from /proc/mounts. */
+    private val _activeMounts = MutableStateFlow<List<String>>(emptyList())
+    val activeMounts = _activeMounts.asStateFlow()
+
+    init {
+        refreshMounts()
+    }
+
+    fun refreshMounts() {
+        viewModelScope.launch {
+            _activeMounts.value = MountManager.activeMounts()
+        }
+    }
 
     fun updateMounts(m: MountConfig) {
         viewModelScope.launch {
@@ -51,6 +69,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
             if (chroot.status.value == ChrootStatus.MOUNTED) {
                 MountManager.ensureMounted(m)
             }
+            _activeMounts.value = MountManager.activeMounts()
         }
     }
 
@@ -67,7 +86,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             repo.updateUser(u)
             if (newPassword.isNotBlank() && !u.loginAsRoot) {
-                chroot.runInsideChroot("echo '${u.username}:$newPassword' | chpasswd")
+                chroot.runInsideChroot("echo ${quote("${u.username}:$newPassword")} | chpasswd")
             }
         }
     }
@@ -95,7 +114,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 tmp.delete()
                 _backupState.value = BackupState.Success(tmp.name)
             } catch (e: Exception) {
-                _backupState.value = BackupState.Error(e.message ?: e.toString())
+                _backupState.value = errorFor(e)
             }
         }
     }
@@ -113,8 +132,9 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 chroot.importBackup(tmp).getOrThrow()
                 tmp.delete()
                 _backupState.value = BackupState.Success("restore.tar.gz")
+                _activeMounts.value = MountManager.activeMounts()
             } catch (e: Exception) {
-                _backupState.value = BackupState.Error(e.message ?: e.toString())
+                _backupState.value = errorFor(e)
             }
         }
     }
@@ -123,10 +143,18 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _backupState.value = BackupState.Running("reset")
             chroot.reset().fold(
-                onSuccess = { _backupState.value = BackupState.Success("reset") },
-                onFailure = { _backupState.value = BackupState.Error(it.message ?: it.toString()) },
+                onSuccess = {
+                    _backupState.value = BackupState.Success("reset")
+                    _activeMounts.value = emptyList()
+                },
+                onFailure = { _backupState.value = errorFor(it) },
             )
         }
+    }
+
+    private fun errorFor(t: Throwable): BackupState = when (t) {
+        is ChrootController.MountsBusyException -> BackupState.MountsBusy(t.points)
+        else -> BackupState.Error(t.message ?: t.toString())
     }
 
     fun clearBackupState() {

@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -41,6 +42,7 @@ fun BackupScreen(
 ) {
     val state by viewModel.backupState.collectAsStateWithLifecycle()
     var showResetConfirm by remember { mutableStateOf(false) }
+    var showResetFinal by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/gzip")
@@ -66,6 +68,30 @@ fun BackupScreen(
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
             )
+            is SettingsViewModel.BackupState.MountsBusy -> GlassCard(
+                backdrop = backdrop,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    stringResource(R.string.mounts_busy_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.mounts_busy_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                s.points.forEach { point ->
+                    Text(
+                        point,
+                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
             SettingsViewModel.BackupState.Idle -> {}
         }
 
@@ -147,13 +173,37 @@ fun BackupScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showResetConfirm = false
-                    viewModel.resetChroot()
+                    showResetFinal = true
                 }) {
                     Text(stringResource(R.string.reset_button), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showResetConfirm = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+
+    if (showResetFinal) {
+        AlertDialog(
+            onDismissRequest = { showResetFinal = false },
+            title = { Text(stringResource(R.string.reset_confirm_final_title)) },
+            text = { Text(stringResource(R.string.reset_confirm_final_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showResetFinal = false
+                    viewModel.resetChroot()
+                }) {
+                    Text(
+                        stringResource(R.string.reset_confirm_final_button),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetFinal = false }) {
                     Text(stringResource(R.string.cancel))
                 }
             },

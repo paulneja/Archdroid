@@ -110,4 +110,12 @@
     <string name="about_limits_title">Known limitations</string>
     <string name="about_limits_body">No systemd inside a chroot (use plain scripts for services). Kernels older than 4.14 may break newer glibc calls. Kernels built without CONFIG_SYSVIPC cannot run databases like PostgreSQL.</string>
     <string name="about_credits_title">Credits</string>
+    <string name="reset_confirm_final_title">Last chance</string>
+    <string name="reset_confirm_final_body">The whole rootfs at /data/local/arch is about to be deleted. Installed packages, your home directory and anything you saved inside Arch are gone for good.</string>
+    <string name="reset_confirm_final_button">Delete everything</string>
+    <string name="mounts_busy_title">Mounts still active</string>
+    <string name="mounts_busy_body">Nothing was deleted. These mount points are still live under the chroot — a delete would reach through them into the real filesystem. Unmount from Home and try again.</string>
+    <string name="mounts_active_title">Active right now</string>
+    <string name="mounts_active_empty">Nothing mounted</string>
+    <string name="mounts_refresh">Refresh</string>
 </resources>
