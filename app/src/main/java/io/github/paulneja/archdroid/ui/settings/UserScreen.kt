@@ -38,6 +38,7 @@ fun UserScreen(
             SwitchRow(
                 stringResource(R.string.wizard_login_as_root),
                 user.loginAsRoot,
+                backdrop,
             ) { viewModel.updateUser(user.copy(loginAsRoot = it)) }
 
             if (!user.loginAsRoot) {

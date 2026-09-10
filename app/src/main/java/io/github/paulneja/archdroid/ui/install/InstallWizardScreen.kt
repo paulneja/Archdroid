@@ -26,7 +26,6 @@ import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,6 +42,7 @@ import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.core.chroot.ChrootInstaller
 import io.github.paulneja.archdroid.ui.components.GlassCard
 import io.github.paulneja.archdroid.ui.components.LiquidButton
+import io.github.paulneja.archdroid.ui.components.LiquidToggle
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -79,7 +79,7 @@ fun InstallWizardScreen(
                     0 -> WelcomePage(ui)
                     1 -> MirrorPage(ui, viewModel)
                     2 -> PackagesPage(ui, viewModel)
-                    3 -> UserPage(ui, viewModel)
+                    3 -> UserPage(backdrop, ui, viewModel)
                     4 -> ProgressPage(backdrop, ui)
                     else -> DonePage(backdrop, ui)
                 }
@@ -217,7 +217,11 @@ private fun PackagesPage(ui: InstallWizardViewModel.UiState, viewModel: InstallW
 }
 
 @Composable
-private fun UserPage(ui: InstallWizardViewModel.UiState, viewModel: InstallWizardViewModel) {
+private fun UserPage(
+    backdrop: Backdrop,
+    ui: InstallWizardViewModel.UiState,
+    viewModel: InstallWizardViewModel,
+) {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -229,7 +233,11 @@ private fun UserPage(ui: InstallWizardViewModel.UiState, viewModel: InstallWizar
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
-            Switch(checked = ui.loginAsRoot, onCheckedChange = viewModel::setLoginAsRoot)
+            LiquidToggle(
+                checked = ui.loginAsRoot,
+                onCheckedChange = viewModel::setLoginAsRoot,
+                backdrop = backdrop,
+            )
         }
         if (!ui.loginAsRoot) {
             Spacer(Modifier.height(16.dp))

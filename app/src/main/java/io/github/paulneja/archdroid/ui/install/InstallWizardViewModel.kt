@@ -90,15 +90,21 @@ class InstallWizardViewModel(app: Application) : AndroidViewModel(app) {
                 password = s.password,
                 env = EnvConfig(),
             )
-            val result = installer.install(config) { progress ->
-                _ui.update { state ->
-                    state.copy(
-                        progress = progress,
-                        log = (state.log + InstallPlan.logLine(progress.step.name, progress.detail))
-                            .takeLast(200),
-                    )
-                }
-            }
+            val result = installer.install(
+                config = config,
+                onProgress = { progress ->
+                    _ui.update { state ->
+                        state.copy(
+                            progress = progress,
+                            log = (state.log + InstallPlan.logLine(progress.step.name, progress.detail))
+                                .takeLast(200),
+                        )
+                    }
+                },
+                onLog = { line ->
+                    _ui.update { state -> state.copy(log = (state.log + line).takeLast(200)) }
+                },
+            )
             result.fold(
                 onSuccess = {
                     settings.updateMirror(config.mirror)

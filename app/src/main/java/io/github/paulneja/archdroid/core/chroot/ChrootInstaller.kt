@@ -42,7 +42,9 @@ class ChrootInstaller(private val context: Context) {
     suspend fun install(
         config: InstallConfig,
         onProgress: (Progress) -> Unit,
+        onLog: (String) -> Unit = {},
     ): Result<Unit> = runCatching {
+        log = onLog
         download(config, onProgress)
         verify(config, onProgress)
         extract(onProgress)
@@ -51,6 +53,8 @@ class ChrootInstaller(private val context: Context) {
         installPackages(config, onProgress)
         cleanup(onProgress)
     }
+
+    private var log: (String) -> Unit = {}
 
     /**
      * Downloads the rootfs (~790 MiB) resuming a previous attempt when the server honours
@@ -155,7 +159,7 @@ class ChrootInstaller(private val context: Context) {
             appendLine("\$TAR -xpf $tarball -C \"\$C\"")
             appendLine("test -f ${ChrootPaths.MARKER_FILE}")
         }
-        val result = RootManager.execScript(script)
+        val result = RootManager.execStreaming(script, log)
         if (!result.isSuccess) {
             throw InstallException(Step.EXTRACT, "tar failed: ${result.err.joinToString()}")
         }
@@ -214,8 +218,9 @@ class ChrootInstaller(private val context: Context) {
     }
 
     private suspend fun chrootBash(step: Step, command: String) {
-        val result = RootManager.execScript(
-            "chroot ${ChrootPaths.CHROOT_DIR} /bin/bash -lc ${quote(command)}"
+        val result = RootManager.execStreaming(
+            "chroot ${ChrootPaths.CHROOT_DIR} /bin/bash -lc ${quote(command)}",
+            log,
         )
         if (!result.isSuccess) {
             throw InstallException(step, "$command -> ${result.err.joinToString()}")

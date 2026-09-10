@@ -24,7 +24,6 @@ import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,6 +38,7 @@ import com.kyant.backdrop.Backdrop
 import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.ui.Routes
 import io.github.paulneja.archdroid.ui.components.GlassCard
+import io.github.paulneja.archdroid.ui.components.LiquidToggle
 
 @Composable
 fun SettingsScreen(
@@ -100,9 +100,10 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
-                Switch(
+                LiquidToggle(
                     checked = settings.dynamicColor,
                     onCheckedChange = viewModel::updateDynamicColor,
+                    backdrop = backdrop,
                 )
             }
         }
@@ -177,7 +178,12 @@ fun SettingsSubScreen(
 }
 
 @Composable
-fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+fun SwitchRow(
+    label: String,
+    checked: Boolean,
+    backdrop: Backdrop,
+    onCheckedChange: (Boolean) -> Unit,
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
@@ -188,6 +194,6 @@ fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Uni
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        LiquidToggle(checked = checked, onCheckedChange = onCheckedChange, backdrop = backdrop)
     }
 }

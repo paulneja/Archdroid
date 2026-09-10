@@ -82,11 +82,11 @@ fun MountsScreen(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(Modifier.height(8.dp))
-            SwitchRow("/proc", mounts.proc) { viewModel.updateMounts(mounts.copy(proc = it)) }
-            SwitchRow("/sys", mounts.sys) { viewModel.updateMounts(mounts.copy(sys = it)) }
-            SwitchRow("/dev", mounts.dev) { viewModel.updateMounts(mounts.copy(dev = it)) }
-            SwitchRow("/dev/pts", mounts.devPts) { viewModel.updateMounts(mounts.copy(devPts = it)) }
-            SwitchRow("/dev/shm (tmpfs)", mounts.shm) { viewModel.updateMounts(mounts.copy(shm = it)) }
+            SwitchRow("/proc", mounts.proc, backdrop) { viewModel.updateMounts(mounts.copy(proc = it)) }
+            SwitchRow("/sys", mounts.sys, backdrop) { viewModel.updateMounts(mounts.copy(sys = it)) }
+            SwitchRow("/dev", mounts.dev, backdrop) { viewModel.updateMounts(mounts.copy(dev = it)) }
+            SwitchRow("/dev/pts", mounts.devPts, backdrop) { viewModel.updateMounts(mounts.copy(devPts = it)) }
+            SwitchRow("/dev/shm (tmpfs)", mounts.shm, backdrop) { viewModel.updateMounts(mounts.copy(shm = it)) }
             if (mounts.shm) {
                 Text(
                     text = stringResource(R.string.mounts_shm_size, mounts.shmSizeMb),
@@ -113,6 +113,7 @@ fun MountsScreen(
             SwitchRow(
                 stringResource(R.string.mounts_shared_enable),
                 mounts.bindSharedStorage,
+                backdrop,
             ) { viewModel.updateMounts(mounts.copy(bindSharedStorage = it)) }
             if (mounts.bindSharedStorage) {
                 OutlinedTextField(
@@ -136,6 +137,7 @@ fun MountsScreen(
                 SwitchRow(
                     stringResource(R.string.mounts_shared_ro),
                     mounts.sharedStorageReadOnly,
+                    backdrop,
                 ) { viewModel.updateMounts(mounts.copy(sharedStorageReadOnly = it)) }
             }
         }

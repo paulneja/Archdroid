@@ -98,6 +98,67 @@ fun LiquidButton(
     )
 }
 
+/**
+ * Glass counterpart of the M3 Switch: the track is drawn through the backdrop so the
+ * wallpaper shows through it, the thumb is a small lens that slides across.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun LiquidToggle(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    backdrop: Backdrop,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val accent = MaterialTheme.colorScheme.primary
+    val trackTint = if (checked) accent.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.06f)
+    val offset by animateFloatAsState(
+        targetValue = if (checked) 1f else 0f,
+        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+        label = "toggle",
+    )
+
+    Box(
+        modifier = modifier
+            .width(56.dp)
+            .height(32.dp)
+            .drawBackdrop(
+                backdrop = backdrop,
+                shape = { Capsule() },
+                effects = {
+                    vibrancy()
+                    blur(4f.dp.toPx())
+                    lens(10f.dp.toPx(), 16f.dp.toPx())
+                },
+                onDrawSurface = { drawRect(trackTint) },
+            )
+            .clip(Capsule())
+            .clickable(enabled = enabled) { onCheckedChange(!checked) },
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        val travel = with(LocalDensity.current) { 24.dp.toPx() }
+        Box(
+            modifier = Modifier
+                .offset { IntOffset((travel * offset).roundToInt(), 0) }
+                .padding(4.dp)
+                .width(24.dp)
+                .height(24.dp)
+                .drawBackdrop(
+                    backdrop = backdrop,
+                    shape = { Capsule() },
+                    effects = {
+                        vibrancy()
+                        lens(8f.dp.toPx(), 12f.dp.toPx())
+                    },
+                    onDrawSurface = {
+                        drawRect(if (checked) accent else Color.White.copy(alpha = 0.55f))
+                    },
+                )
+        )
+    }
+}
+
 data class GlassNavItem(
     val route: String,
     val icon: ImageVector,

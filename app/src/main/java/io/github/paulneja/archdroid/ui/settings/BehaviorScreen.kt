@@ -32,6 +32,7 @@ fun BehaviorScreen(
             SwitchRow(
                 stringResource(R.string.behavior_autostart),
                 behavior.autostartOnBoot,
+                backdrop,
             ) { viewModel.updateBehavior(behavior.copy(autostartOnBoot = it)) }
             Spacer(Modifier.height(4.dp))
             Text(

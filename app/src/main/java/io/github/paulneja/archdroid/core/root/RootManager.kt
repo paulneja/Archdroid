@@ -1,8 +1,10 @@
 package io.github.paulneja.archdroid.core.root
 
+import com.topjohnwu.superuser.CallbackList
 import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.concurrent.Executor
 
 object RootManager {
 
@@ -21,6 +23,22 @@ object RootManager {
 
     suspend fun execScript(script: String): Shell.Result = withContext(Dispatchers.IO) {
         Shell.cmd(script).exec()
+    }
+
+    /**
+     * Runs a script and reports every stdout/stderr line as it arrives, so long operations
+     * like `pacman -Syu` show progress instead of hanging silently for minutes.
+     */
+    suspend fun execStreaming(
+        script: String,
+        onLine: (String) -> Unit,
+    ): Shell.Result = withContext(Dispatchers.IO) {
+        val sink = object : CallbackList<String>(Executor { it.run() }, ArrayList<String>()) {
+            override fun onAddElement(line: String?) {
+                line?.let(onLine)
+            }
+        }
+        Shell.cmd(script).to(sink, sink).exec()
     }
 
     suspend fun test(command: String): Boolean = exec(command).isSuccess
