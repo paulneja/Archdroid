@@ -1,5 +1,10 @@
 package io.github.paulneja.archdroid.data.model
 
+import android.annotation.SuppressLint
+
+// These are bind-mount paths handed to a root shell, not app-sandbox file access, so the
+// literal /sdcard is exactly what is wanted here.
+@SuppressLint("SdCardPath")
 data class MountConfig(
     val proc: Boolean = true,
     val sys: Boolean = true,

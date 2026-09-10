@@ -1,5 +1,6 @@
 package io.github.paulneja.archdroid.ui.terminal
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.os.Handler
 import android.os.Looper
@@ -33,6 +34,8 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     val ctrlActive = MutableStateFlow(false)
     val altActive = MutableStateFlow(false)
 
+    // AndroidViewModel hands us the Application, not an Activity: safe to hold.
+    @SuppressLint("StaticFieldLeak")
     val viewClient = ArchTerminalViewClient(app, { viewRef }, modifierState)
 
     private val _tabs = MutableStateFlow<List<Tab>>(emptyList())

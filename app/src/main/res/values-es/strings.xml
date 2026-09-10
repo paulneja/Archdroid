@@ -118,4 +118,6 @@
     <string name="mounts_active_title">Activos ahora</string>
     <string name="mounts_active_empty">Nada montado</string>
     <string name="mounts_refresh">Actualizar</string>
+    <string name="about_limits_16kb">Las librerías nativas de Termux y busybox que se usan no están alineadas a páginas de 16 KB, así que la terminal no arranca en dispositivos con Android 15+ y kernel de 16 KB. Las dos vienen así desde upstream; todavía no hay una versión más nueva publicada.</string>
+    <string name="mount_failed">Falló el montaje</string>
 </resources>

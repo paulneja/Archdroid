@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.paulneja.archdroid.core.chroot.ChrootController
 import io.github.paulneja.archdroid.core.chroot.ChrootPaths
+import io.github.paulneja.archdroid.core.chroot.ChrootStatus
 import io.github.paulneja.archdroid.core.root.RootManager
 import io.github.paulneja.archdroid.di.ServiceLocator
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,14 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val _busy = MutableStateFlow(false)
     val busy = _busy.asStateFlow()
 
+    /** Set when a mount or unmount did not do what was asked, so the UI can say so. */
+    private val _mountError = MutableStateFlow<String?>(null)
+    val mountError = _mountError.asStateFlow()
+
+    fun clearMountError() {
+        _mountError.value = null
+    }
+
     init {
         refresh()
     }
@@ -43,13 +52,20 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         if (_busy.value) return
         viewModelScope.launch {
             _busy.value = true
+            _mountError.value = null
             try {
-                when (status.value) {
-                    io.github.paulneja.archdroid.core.chroot.ChrootStatus.MOUNTED -> chroot.stop()
-                    io.github.paulneja.archdroid.core.chroot.ChrootStatus.INSTALLED -> chroot.prepareSession()
-                    else -> {}
+                val result = when (status.value) {
+                    ChrootStatus.MOUNTED -> chroot.stop()
+                    ChrootStatus.INSTALLED -> chroot.prepareSession()
+                    else -> null
+                }
+                if (result != null && !result.ok) {
+                    _mountError.value = result.log.filter { it.isNotBlank() }.takeLast(4)
+                        .joinToString("\n")
+                        .ifBlank { "operation failed" }
                 }
                 chroot.refresh()
+                refresh()
             } finally {
                 _busy.value = false
             }

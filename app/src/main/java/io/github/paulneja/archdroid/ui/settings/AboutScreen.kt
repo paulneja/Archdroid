@@ -51,6 +51,12 @@ fun AboutScreen(backdrop: Backdrop, onBack: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.about_limits_16kb),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
         GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth()) {

@@ -1,5 +1,6 @@
 package io.github.paulneja.archdroid.data
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore(name = "archdroid_settings")
 
+@SuppressLint("SdCardPath")
 class SettingsRepository(private val context: Context) {
 
     private object Keys {
