@@ -35,7 +35,6 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     val altActive = MutableStateFlow(false)
 
     // AndroidViewModel hands us the Application, not an Activity: safe to hold.
-    @SuppressLint("StaticFieldLeak")
     val viewClient = ArchTerminalViewClient(app, { viewRef }, modifierState)
 
     private val _tabs = MutableStateFlow<List<Tab>>(emptyList())
@@ -52,6 +51,8 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
 
     var onAllSessionsClosed: (() -> Unit)? = null
 
+    // Cleared by detachView() from AndroidView's onRelease, so it never outlives the view.
+    @SuppressLint("StaticFieldLeak")
     private var viewRef: TerminalView? = null
 
     init {

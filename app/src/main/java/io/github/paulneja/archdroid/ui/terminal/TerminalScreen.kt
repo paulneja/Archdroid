@@ -138,6 +138,8 @@ fun TerminalScreen(
                         viewModel.attachView(this)
                     }
                 },
+                // Without this the ViewModel outlives the view and keeps the Activity alive.
+                onRelease = { viewModel.detachView() },
                 modifier = Modifier.fillMaxSize(),
             )
             if (preparing) {
