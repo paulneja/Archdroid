@@ -95,7 +95,6 @@ dependencies {
     implementation(libs.kyant.shapes)
     implementation(libs.libsu.core)
     implementation(libs.termux.terminal.view)
-    implementation(libs.guava.listenablefuture.fix)
 
     implementation(libs.okhttp)
     implementation(libs.kotlinx.coroutines.android)
