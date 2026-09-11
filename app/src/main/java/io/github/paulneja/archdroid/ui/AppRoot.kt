@@ -27,6 +27,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import io.github.paulneja.archdroid.R
@@ -54,31 +55,35 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
 
     ArchDroidTheme(dynamicColor = settings.dynamicColor) {
         val background = Brush.verticalGradient(listOf(BgDeepTop, BgDeepBottom))
-        val backdrop = rememberLayerBackdrop {
-            drawRect(background)
-            drawContent()
-        }
+        // Holds the background and nothing else. Glass that lives *inside* the content
+        // samples this one, because a layer must never contain anything that draws the
+        // same layer: that makes the RenderNode tree cyclic and the render thread
+        // overflows its stack on the first frame.
+        val backgroundBackdrop = rememberLayerBackdrop { drawRect(background) }
         val rootState by viewModel.rootState.collectAsStateWithLifecycle()
 
         Box(Modifier.fillMaxSize().background(background)) {
+            // The layer source. Deliberately empty: it records the gradient above, and
+            // must stay free of any glass.
+            Box(Modifier.fillMaxSize().layerBackdrop(backgroundBackdrop))
+
             when (rootState) {
                 AppViewModel.RootState.CHECKING ->
-                    RootCheckScreen(backdrop, checking = true, onRetry = viewModel::checkRoot)
+                    RootCheckScreen(backgroundBackdrop, checking = true, onRetry = viewModel::checkRoot)
                 AppViewModel.RootState.DENIED ->
-                    RootCheckScreen(backdrop, checking = false, onRetry = viewModel::checkRoot)
+                    RootCheckScreen(backgroundBackdrop, checking = false, onRetry = viewModel::checkRoot)
                 AppViewModel.RootState.GRANTED ->
-                    MainScaffold(viewModel)
+                    MainScaffold(viewModel, backgroundBackdrop)
             }
         }
     }
 }
 
 @Composable
-private fun MainScaffold(viewModel: AppViewModel) {
-    val backdrop = rememberLayerBackdrop {
-        drawRect(Brush.verticalGradient(listOf(BgDeepTop, BgDeepBottom)))
-        drawContent()
-    }
+private fun MainScaffold(viewModel: AppViewModel, backgroundBackdrop: Backdrop) {
+    // Captures the scrolling content so the floating bar refracts whatever passes under
+    // it. Safe only because the bar is a sibling of the NavHost, never one of its children.
+    val contentBackdrop = rememberLayerBackdrop { drawContent() }
     val navController = rememberNavController()
     val status by viewModel.chroot.status.collectAsStateWithLifecycle()
     val startRoute = if (status == ChrootStatus.NOT_INSTALLED) Routes.INSTALL else Routes.HOME
@@ -93,11 +98,11 @@ private fun MainScaffold(viewModel: AppViewModel) {
             startDestination = startRoute,
             modifier = Modifier
                 .fillMaxSize()
-                .layerBackdrop(backdrop),
+                .layerBackdrop(contentBackdrop),
         ) {
             composable(Routes.HOME) {
                 HomeScreen(
-                    backdrop = backdrop,
+                    backdrop = backgroundBackdrop,
                     onOpenTerminal = { navController.navigate(Routes.TERMINAL) },
                     onInstall = { navController.navigate(Routes.INSTALL) },
                 )
@@ -107,7 +112,7 @@ private fun MainScaffold(viewModel: AppViewModel) {
             }
             composable(Routes.INSTALL) {
                 InstallWizardScreen(
-                    backdrop = backdrop,
+                    backdrop = backgroundBackdrop,
                     onDone = {
                         navController.navigate(Routes.HOME) {
                             popUpTo(0) { inclusive = true }
@@ -116,25 +121,25 @@ private fun MainScaffold(viewModel: AppViewModel) {
                 )
             }
             composable(Routes.SETTINGS) {
-                SettingsScreen(backdrop = backdrop, onOpenSection = { navController.navigate(it) })
+                SettingsScreen(backdrop = backgroundBackdrop, onOpenSection = { navController.navigate(it) })
             }
             composable(Routes.SETTINGS_MOUNTS) {
-                MountsScreen(backdrop = backdrop, onBack = { navController.popBackStack() })
+                MountsScreen(backdrop = backgroundBackdrop, onBack = { navController.popBackStack() })
             }
             composable(Routes.SETTINGS_ENV) {
-                EnvScreen(backdrop = backdrop, onBack = { navController.popBackStack() })
+                EnvScreen(backdrop = backgroundBackdrop, onBack = { navController.popBackStack() })
             }
             composable(Routes.SETTINGS_USER) {
-                UserScreen(backdrop = backdrop, onBack = { navController.popBackStack() })
+                UserScreen(backdrop = backgroundBackdrop, onBack = { navController.popBackStack() })
             }
             composable(Routes.SETTINGS_BEHAVIOR) {
-                BehaviorScreen(backdrop = backdrop, onBack = { navController.popBackStack() })
+                BehaviorScreen(backdrop = backgroundBackdrop, onBack = { navController.popBackStack() })
             }
             composable(Routes.SETTINGS_BACKUP) {
-                BackupScreen(backdrop = backdrop, onBack = { navController.popBackStack() })
+                BackupScreen(backdrop = backgroundBackdrop, onBack = { navController.popBackStack() })
             }
             composable(Routes.SETTINGS_ABOUT) {
-                AboutScreen(backdrop = backdrop, onBack = { navController.popBackStack() })
+                AboutScreen(backdrop = backgroundBackdrop, onBack = { navController.popBackStack() })
             }
         }
 
@@ -148,7 +153,7 @@ private fun MainScaffold(viewModel: AppViewModel) {
                 .padding(bottom = 12.dp),
         ) {
             GlassBottomBar(
-                backdrop = backdrop,
+                backdrop = contentBackdrop,
                 items = listOf(
                     GlassNavItem(Routes.HOME, Icons.Rounded.Home, stringResource(R.string.nav_home)),
                     GlassNavItem(Routes.TERMINAL, Icons.Rounded.Terminal, stringResource(R.string.nav_terminal)),

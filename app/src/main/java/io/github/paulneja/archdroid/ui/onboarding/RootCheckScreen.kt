@@ -21,8 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.kyant.backdrop.backdrops.LayerBackdrop
-import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.Backdrop
 import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.ui.components.GlassCard
 import io.github.paulneja.archdroid.ui.components.LiquidButton
@@ -30,14 +29,12 @@ import io.github.paulneja.archdroid.ui.components.LiquidButton
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RootCheckScreen(
-    backdrop: LayerBackdrop,
+    backdrop: Backdrop,
     checking: Boolean,
     onRetry: () -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .layerBackdrop(backdrop),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
         if (checking) {
