@@ -17,7 +17,7 @@ class BootReceiver : BroadcastReceiver() {
             try {
                 val settings = ServiceLocator.settings(context)
                 if (settings.current().behavior.autostartOnBoot) {
-                    ServiceLocator.chroot(context).prepareSession()
+                    ServiceLocator.chroot(context).prepareSession(pin = true)
                 }
             } finally {
                 pending.finish()

@@ -46,6 +46,7 @@ fun HomeScreen(
     val diskUsage by viewModel.diskUsage.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val mountError by viewModel.mountError.collectAsStateWithLifecycle()
+    val activeMounts by viewModel.activeMounts.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -89,6 +90,29 @@ fun HomeScreen(
             )
             InfoRow(stringResource(R.string.kernel_label), kernel, monospace = true)
             InfoRow(stringResource(R.string.disk_label), diskUsage, monospace = true)
+        }
+
+        if (activeMounts.isNotEmpty()) {
+            GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = stringResource(R.string.mounts_live_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+                Text(
+                    text = stringResource(R.string.mounts_live_body, ChrootPaths.CHROOT_DIR),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                activeMounts.forEach { point ->
+                    Text(
+                        text = point,
+                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
         }
 
         mountError?.let { message ->

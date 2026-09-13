@@ -47,4 +47,6 @@ object RootManager {
     suspend fun test(command: String): Boolean = exec(command).isSuccess
 
     suspend fun outputOf(command: String): List<String> = exec(command).out
+
+    suspend fun outputOfScript(script: String): List<String> = execScript(script).out
 }

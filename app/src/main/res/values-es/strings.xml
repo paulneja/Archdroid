@@ -119,4 +119,8 @@
     <string name="mounts_active_empty">Nada montado</string>
     <string name="mounts_refresh">Actualizar</string>
     <string name="mount_failed">Falló el montaje</string>
+    <string name="terminal_broken_title">El chroot está incompleto</string>
+    <string name="terminal_broken_body">Faltan estos archivos, así que no hay a dónde entrar. Reinstalá Arch desde el asistente.</string>
+    <string name="mounts_live_title">Chroot montado</string>
+    <string name="mounts_live_body">Mientras esto esté montado, no borres %1$s a mano. Un borrado los atraviesa y llega al sistema de archivos real al que apuntan.</string>
 </resources>

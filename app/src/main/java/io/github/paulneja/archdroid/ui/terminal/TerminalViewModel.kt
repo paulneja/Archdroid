@@ -49,6 +49,10 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     private val _error = MutableStateFlow<String?>(null)
     val error = _error.asStateFlow()
 
+    /** Essential paths missing from the rootfs; non-empty means it cannot be entered. */
+    private val _broken = MutableStateFlow<List<String>>(emptyList())
+    val broken = _broken.asStateFlow()
+
     var onAllSessionsClosed: (() -> Unit)? = null
 
     // Cleared by detachView() from AndroidView's onRelease, so it never outlives the view.
@@ -62,9 +66,17 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
         }
         viewModelScope.launch {
             val result = chroot.prepareSession()
-            _preparing.value = false
             if (!result.ok) {
+                _preparing.value = false
                 _error.value = result.log.joinToString("\n")
+                return@launch
+            }
+            // Check before spawning: a gutted rootfs makes the session die instantly and
+            // the screen close itself, which reads as the app refusing to open at all.
+            val missing = chroot.missingEssentials()
+            _preparing.value = false
+            if (missing.isNotEmpty()) {
+                _broken.value = missing
             } else {
                 createSession()
             }
@@ -120,6 +132,7 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
         if (index < 0) return
         _tabs.value = _tabs.value.toMutableList().apply { removeAt(index) }
         if (_tabs.value.isEmpty()) {
+            viewModelScope.launch { chroot.releaseSession(remainingSessions = 0) }
             onAllSessionsClosed?.invoke()
             return
         }

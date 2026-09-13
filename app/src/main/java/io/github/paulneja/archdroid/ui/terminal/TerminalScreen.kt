@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -54,6 +56,7 @@ fun TerminalScreen(
     val activeIndex by viewModel.activeIndex.collectAsStateWithLifecycle()
     val preparing by viewModel.preparing.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val broken by viewModel.broken.collectAsStateWithLifecycle()
     val ctrlActive by viewModel.ctrlActive.collectAsStateWithLifecycle()
     val altActive by viewModel.altActive.collectAsStateWithLifecycle()
 
@@ -66,7 +69,12 @@ fun TerminalScreen(
             .fillMaxSize()
             .background(TerminalBg)
             .statusBarsPadding()
-            .imePadding(),
+            // Order matters: inset modifiers consume what they apply, so the keyboard
+            // inset wins while the keyboard is up and the navigation bar inset applies
+            // when it is not. Without the second one the extra-keys bar ends up under
+            // Android's back/home/recents bar and becomes untappable.
+            .imePadding()
+            .navigationBarsPadding(),
     ) {
         // Tab bar
         Row(
@@ -156,6 +164,35 @@ fun TerminalScreen(
                     )
                 }
             }
+            if (broken.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(24.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.terminal_broken_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.terminal_broken_body),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    broken.forEach { path ->
+                        Text(
+                            text = path,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+
             error?.let {
                 Text(
                     text = stringResource(R.string.terminal_mount_error, it),

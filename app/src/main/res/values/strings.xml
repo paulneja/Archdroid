@@ -119,4 +119,8 @@
     <string name="mounts_active_empty">Nothing mounted</string>
     <string name="mounts_refresh">Refresh</string>
     <string name="mount_failed">Mount failed</string>
+    <string name="terminal_broken_title">The chroot is incomplete</string>
+    <string name="terminal_broken_body">These files are missing, so there is nothing to log into. Reinstall Arch from the wizard.</string>
+    <string name="mounts_live_title">Chroot mounted</string>
+    <string name="mounts_live_body">While these are mounted, do not delete %1$s by hand. A delete would follow them out of the chroot and into the real filesystem they point at.</string>
 </resources>
