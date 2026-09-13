@@ -9,9 +9,18 @@ object MountManager {
 
     data class MountResult(val ok: Boolean, val log: List<String>)
 
+    /**
+     * Runs the mount plan and then asks the kernel what actually came up. The shell only
+     * reports the exit code of its last command, so success is decided by /proc/mounts,
+     * never by that code.
+     */
     suspend fun ensureMounted(cfg: MountConfig): MountResult {
         val result = RootManager.exec(*MountPlan.mountCommands(cfg, C).toTypedArray())
-        return MountResult(result.isSuccess, result.out + result.err)
+        val missing = MountPlan.missingMounts(RootManager.outputOf("cat /proc/mounts"), cfg, C)
+        return MountResult(
+            ok = missing.isEmpty(),
+            log = result.out + result.err + missing.map { "not mounted: $it" },
+        )
     }
 
     /**

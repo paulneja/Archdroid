@@ -42,6 +42,69 @@ class MountPlanTest {
     }
 
     @Test
+    fun `creates the dev subdirectories after binding dev over them`() {
+        // mkdir before the bind is useless: the bind hides whatever was created, and the
+        // devpts/shm mount points then resolve inside Android's own /dev.
+        val cmds = MountPlan.mountCommands(MountConfig(), c)
+        val bind = cmds.indexOfFirst { it.contains("mount --bind /dev") }
+        val mkdirPts = cmds.indexOfLast { it.contains("mkdir") && it.contains("$c/dev/pts") }
+        val mkdirShm = cmds.indexOfLast { it.contains("mkdir") && it.contains("$c/dev/shm") }
+
+        assertTrue("no dev bind found", bind >= 0)
+        assertTrue("dev/pts must be created after the bind", mkdirPts > bind)
+        assertTrue("dev/shm must be created after the bind", mkdirShm > bind)
+    }
+
+    @Test
+    fun `mounts each dev subdirectory only after creating it`() {
+        val cmds = MountPlan.mountCommands(MountConfig(), c)
+        val mkdirShm = cmds.indexOfLast { it.contains("mkdir") && it.contains("$c/dev/shm") }
+        val mountShm = cmds.indexOfFirst { it.contains("mount -t tmpfs") && it.contains("$c/dev/shm") }
+        assertTrue("shm must be created before it is mounted", mkdirShm < mountShm)
+    }
+
+    @Test
+    fun `expected mount points follow the config`() {
+        assertEquals(
+            listOf("$c/proc", "$c/sys", "$c/dev", "$c/dev/pts", "$c/dev/shm"),
+            MountPlan.expectedMountPoints(MountConfig(), c),
+        )
+        assertEquals(
+            listOf("$c/proc"),
+            MountPlan.expectedMountPoints(
+                MountConfig(sys = false, dev = false, devPts = false, shm = false), c,
+            ),
+        )
+    }
+
+    @Test
+    fun `expected mount points include the shared storage bind`() {
+        val cfg = MountConfig(bindSharedStorage = true, sharedStorageTarget = "/mnt/sd")
+        assertTrue(MountPlan.expectedMountPoints(cfg, c).contains("$c/mnt/sd"))
+    }
+
+    @Test
+    fun `missing mounts names exactly what did not come up`() {
+        val procMounts = listOf(
+            "proc /data/local/arch/proc proc rw 0 0",
+            "sysfs /data/local/arch/sys sysfs rw 0 0",
+            "tmpfs /data/local/arch/dev tmpfs rw 0 0",
+            "devpts /data/local/arch/dev/pts devpts rw 0 0",
+        )
+        assertEquals(
+            listOf("$c/dev/shm"),
+            MountPlan.missingMounts(procMounts, MountConfig(), c),
+        )
+    }
+
+    @Test
+    fun `missing mounts is empty when everything is up`() {
+        val procMounts = MountPlan.expectedMountPoints(MountConfig(), c)
+            .map { "src $it type rw 0 0" }
+        assertTrue(MountPlan.missingMounts(procMounts, MountConfig(), c).isEmpty())
+    }
+
+    @Test
     fun `unmounts deepest paths first`() {
         val cfg = MountConfig(bindSharedStorage = true)
         val cmds = MountPlan.unmountCommands(cfg, c)

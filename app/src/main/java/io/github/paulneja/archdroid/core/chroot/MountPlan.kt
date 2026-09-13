@@ -11,13 +11,23 @@ object MountPlan {
 
     fun mountCommands(cfg: MountConfig, chrootDir: String): List<String> {
         val c = chrootDir
-        val cmds = mutableListOf("mkdir -p $c/proc $c/sys $c/dev $c/dev/pts $c/dev/shm $c/mnt")
+        val cmds = mutableListOf("mkdir -p $c/proc $c/sys $c/dev $c/mnt")
 
         if (cfg.proc) cmds += "grep -q ' $c/proc ' /proc/mounts || mount -t proc proc $c/proc"
         if (cfg.sys) cmds += "grep -q ' $c/sys ' /proc/mounts || mount -t sysfs sysfs $c/sys"
         if (cfg.dev) cmds += "grep -q ' $c/dev ' /proc/mounts || mount --bind /dev $c/dev"
-        if (cfg.devPts) cmds += "grep -q ' $c/dev/pts ' /proc/mounts || mount -t devpts devpts $c/dev/pts"
+
+        // Only now: binding /dev over $c/dev hides anything created under it beforehand,
+        // so these two have to be made once the bind is in place or the mounts below
+        // target paths that do not exist. Because the bind points at the real /dev, the
+        // mkdir lands there too -- Android ships no /dev/shm and this creates it. That is
+        // what every chroot script does, and /dev is tmpfs, so a reboot undoes it.
+        if (cfg.devPts) {
+            cmds += "mkdir -p $c/dev/pts"
+            cmds += "grep -q ' $c/dev/pts ' /proc/mounts || mount -t devpts devpts $c/dev/pts"
+        }
         if (cfg.shm) {
+            cmds += "mkdir -p $c/dev/shm"
             cmds += "grep -q ' $c/dev/shm ' /proc/mounts || " +
                 "mount -t tmpfs -o size=${cfg.shmSizeMb}M tmpfs $c/dev/shm"
         }
@@ -32,6 +42,35 @@ object MountPlan {
             }
         }
         return cmds
+    }
+
+    /** The mount points this config is supposed to bring up, outermost first. */
+    fun expectedMountPoints(cfg: MountConfig, chrootDir: String): List<String> {
+        val c = chrootDir
+        val points = mutableListOf<String>()
+        if (cfg.proc) points += "$c/proc"
+        if (cfg.sys) points += "$c/sys"
+        if (cfg.dev) points += "$c/dev"
+        if (cfg.devPts) points += "$c/dev/pts"
+        if (cfg.shm) points += "$c/dev/shm"
+        if (cfg.bindSharedStorage) points += c + cfg.sharedStorageTarget
+        return points
+    }
+
+    /**
+     * Which of the expected mount points are not in /proc/mounts. Checking the kernel
+     * beats trusting an exit code: the shell reports only the last command it ran, so a
+     * mount that failed in the middle would otherwise pass unnoticed.
+     */
+    fun missingMounts(
+        procMounts: List<String>,
+        cfg: MountConfig,
+        chrootDir: String,
+    ): List<String> {
+        val live = procMounts.mapNotNull { line ->
+            line.split(' ').getOrNull(1)?.takeIf { it.isNotBlank() }?.let { decodeOctal(it) }
+        }.toSet()
+        return expectedMountPoints(cfg, chrootDir).filterNot { it in live }
     }
 
     /** Deepest mount points first, so nothing stays busy behind a parent. */

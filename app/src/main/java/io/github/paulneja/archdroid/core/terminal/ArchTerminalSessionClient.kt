@@ -11,8 +11,11 @@ import com.termux.view.TerminalView
 class ArchTerminalSessionClient(
     context: Context,
     private val viewProvider: () -> TerminalView?,
-    private val onSessionFinished: (TerminalSession) -> Unit,
-    private val onTitleChanged: (TerminalSession) -> Unit,
+    // Deliberately not named after the methods below: a constructor property sharing a
+    // name with a member function loses to it at the call site, and the override ends up
+    // calling itself.
+    private val notifyFinished: (TerminalSession) -> Unit,
+    private val notifyTitleChanged: (TerminalSession) -> Unit,
 ) : TerminalSessionClient {
 
     private val clipboard =
@@ -23,11 +26,11 @@ class ArchTerminalSessionClient(
     }
 
     override fun onTitleChanged(changedSession: TerminalSession) {
-        onTitleChanged(changedSession)
+        notifyTitleChanged(changedSession)
     }
 
     override fun onSessionFinished(finishedSession: TerminalSession) {
-        onSessionFinished(finishedSession)
+        notifyFinished(finishedSession)
     }
 
     override fun onCopyTextToClipboard(session: TerminalSession, text: String) {

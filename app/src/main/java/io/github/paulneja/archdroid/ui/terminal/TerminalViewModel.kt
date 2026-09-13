@@ -89,8 +89,8 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
                 ArchTerminalSessionClient(
                     context = getApplication(),
                     viewProvider = { viewRef },
-                    onSessionFinished = { s -> mainHandler.post { removeSession(s) } },
-                    onTitleChanged = { s ->
+                    notifyFinished = { s -> mainHandler.post { removeSession(s) } },
+                    notifyTitleChanged = { s ->
                         mainHandler.post {
                             _tabs.value.find { it.session == s }?.let { tab ->
                                 s.title?.takeIf { it.isNotBlank() }?.let { tab.title.value = it }
