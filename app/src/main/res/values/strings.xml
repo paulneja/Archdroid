@@ -123,4 +123,8 @@
     <string name="terminal_broken_body">These files are missing, so there is nothing to log into. Reinstall Arch from the wizard.</string>
     <string name="mounts_live_title">Chroot mounted</string>
     <string name="mounts_live_body">While these are mounted, do not delete %1$s by hand. A delete would follow them out of the chroot and into the real filesystem they point at.</string>
+    <string name="mounts_dev_mode_title">How /dev is provided</string>
+    <string name="mounts_dev_use_android">Use Android\'s /dev</string>
+    <string name="mounts_dev_private_hint">A private /dev is mounted with only the nodes a shell needs (null, zero, random, urandom, tty, ptmx). Nothing inside the chroot folder leads to the phone\'s real device nodes.</string>
+    <string name="mounts_dev_bind_hint">Android\'s /dev is bind-mounted in. Maximum compatibility, but while it is mounted a delete of the chroot folder reaches the phone\'s real device nodes and can bring the system down.</string>
 </resources>

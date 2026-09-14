@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kyant.backdrop.Backdrop
 import io.github.paulneja.archdroid.R
+import io.github.paulneja.archdroid.data.model.DevMode
 import io.github.paulneja.archdroid.ui.components.GlassCard
 import kotlin.math.roundToInt
 
@@ -85,6 +86,33 @@ fun MountsScreen(
             SwitchRow("/proc", mounts.proc, backdrop) { viewModel.updateMounts(mounts.copy(proc = it)) }
             SwitchRow("/sys", mounts.sys, backdrop) { viewModel.updateMounts(mounts.copy(sys = it)) }
             SwitchRow("/dev", mounts.dev, backdrop) { viewModel.updateMounts(mounts.copy(dev = it)) }
+            if (mounts.dev) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(R.string.mounts_dev_mode_title),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                SwitchRow(
+                    stringResource(R.string.mounts_dev_use_android),
+                    mounts.devMode == DevMode.BIND,
+                    backdrop,
+                ) { useAndroid ->
+                    viewModel.updateMounts(
+                        mounts.copy(devMode = if (useAndroid) DevMode.BIND else DevMode.PRIVATE),
+                    )
+                }
+                Text(
+                    text = stringResource(
+                        if (mounts.devMode == DevMode.BIND) R.string.mounts_dev_bind_hint
+                        else R.string.mounts_dev_private_hint,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (mounts.devMode == DevMode.BIND) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(4.dp))
+            }
             SwitchRow("/dev/pts", mounts.devPts, backdrop) { viewModel.updateMounts(mounts.copy(devPts = it)) }
             SwitchRow("/dev/shm (tmpfs)", mounts.shm, backdrop) { viewModel.updateMounts(mounts.copy(shm = it)) }
             if (mounts.shm) {

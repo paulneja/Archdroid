@@ -4,11 +4,23 @@ import android.annotation.SuppressLint
 
 // These are bind-mount paths handed to a root shell, not app-sandbox file access, so the
 // literal /sdcard is exactly what is wanted here.
+/**
+ * How /dev is provided inside the chroot.
+ *
+ * [BIND] exposes Android's own /dev, which is what every device needs but also gives
+ * anything inside the chroot directory a path out to the real device nodes: deleting the
+ * chroot folder by hand follows that bind and takes the phone's /dev with it.
+ * [PRIVATE] mounts a fresh tmpfs and fills it with the handful of nodes a shell actually
+ * uses, so no such path exists.
+ */
+enum class DevMode { PRIVATE, BIND }
+
 @SuppressLint("SdCardPath")
 data class MountConfig(
     val proc: Boolean = true,
     val sys: Boolean = true,
     val dev: Boolean = true,
+    val devMode: DevMode = DevMode.PRIVATE,
     val devPts: Boolean = true,
     val shm: Boolean = true,
     val shmSizeMb: Int = 256,

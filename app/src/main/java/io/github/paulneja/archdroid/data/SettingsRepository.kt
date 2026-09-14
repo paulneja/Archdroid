@@ -11,6 +11,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import io.github.paulneja.archdroid.core.chroot.ChrootPaths
 import io.github.paulneja.archdroid.data.model.AppSettings
 import io.github.paulneja.archdroid.data.model.BehaviorConfig
+import io.github.paulneja.archdroid.data.model.DevMode
 import io.github.paulneja.archdroid.data.model.EnvConfig
 import io.github.paulneja.archdroid.data.model.MountConfig
 import io.github.paulneja.archdroid.data.model.UserConfig
@@ -27,6 +28,7 @@ class SettingsRepository(private val context: Context) {
         val MOUNT_PROC = booleanPreferencesKey("mount_proc")
         val MOUNT_SYS = booleanPreferencesKey("mount_sys")
         val MOUNT_DEV = booleanPreferencesKey("mount_dev")
+        val DEV_MODE = stringPreferencesKey("dev_mode")
         val MOUNT_DEVPTS = booleanPreferencesKey("mount_devpts")
         val MOUNT_SHM = booleanPreferencesKey("mount_shm")
         val SHM_SIZE = intPreferencesKey("shm_size_mb")
@@ -58,6 +60,9 @@ class SettingsRepository(private val context: Context) {
                 proc = p[Keys.MOUNT_PROC] ?: true,
                 sys = p[Keys.MOUNT_SYS] ?: true,
                 dev = p[Keys.MOUNT_DEV] ?: true,
+                devMode = p[Keys.DEV_MODE]?.let { name ->
+                    DevMode.entries.firstOrNull { it.name == name }
+                } ?: DevMode.PRIVATE,
                 devPts = p[Keys.MOUNT_DEVPTS] ?: true,
                 shm = p[Keys.MOUNT_SHM] ?: true,
                 shmSizeMb = p[Keys.SHM_SIZE] ?: 256,
@@ -97,6 +102,7 @@ class SettingsRepository(private val context: Context) {
             p[Keys.MOUNT_PROC] = m.proc
             p[Keys.MOUNT_SYS] = m.sys
             p[Keys.MOUNT_DEV] = m.dev
+            p[Keys.DEV_MODE] = m.devMode.name
             p[Keys.MOUNT_DEVPTS] = m.devPts
             p[Keys.MOUNT_SHM] = m.shm
             p[Keys.SHM_SIZE] = m.shmSizeMb

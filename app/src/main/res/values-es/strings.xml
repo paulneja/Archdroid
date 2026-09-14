@@ -123,4 +123,8 @@
     <string name="terminal_broken_body">Faltan estos archivos, así que no hay a dónde entrar. Reinstalá Arch desde el asistente.</string>
     <string name="mounts_live_title">Chroot montado</string>
     <string name="mounts_live_body">Mientras esto esté montado, no borres %1$s a mano. Un borrado los atraviesa y llega al sistema de archivos real al que apuntan.</string>
+    <string name="mounts_dev_mode_title">Cómo se provee /dev</string>
+    <string name="mounts_dev_use_android">Usar el /dev de Android</string>
+    <string name="mounts_dev_private_hint">Se monta un /dev propio con solo los nodos que necesita una shell (null, zero, random, urandom, tty, ptmx). Nada dentro de la carpeta del chroot lleva a los dispositivos reales del teléfono.</string>
+    <string name="mounts_dev_bind_hint">Se monta el /dev de Android por bind. Máxima compatibilidad, pero mientras esté montado un borrado de la carpeta del chroot llega a los dispositivos reales del teléfono y puede tumbar el sistema.</string>
 </resources>

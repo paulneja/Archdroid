@@ -1,6 +1,7 @@
 package io.github.paulneja.archdroid.core.chroot
 
 import io.github.paulneja.archdroid.core.util.ShellQuote.quote
+import io.github.paulneja.archdroid.data.model.DevMode
 import io.github.paulneja.archdroid.data.model.MountConfig
 
 /**
@@ -9,13 +10,39 @@ import io.github.paulneja.archdroid.data.model.MountConfig
  */
 object MountPlan {
 
+    /** name, major, minor -- the character devices a login shell and pacman rely on. */
+    private val DEV_NODES = listOf(
+        Triple("null", 1, 3),
+        Triple("zero", 1, 5),
+        Triple("full", 1, 7),
+        Triple("random", 1, 8),
+        Triple("urandom", 1, 9),
+        Triple("tty", 5, 0),
+    )
+
     fun mountCommands(cfg: MountConfig, chrootDir: String): List<String> {
         val c = chrootDir
         val cmds = mutableListOf("mkdir -p $c/proc $c/sys $c/dev $c/mnt")
 
         if (cfg.proc) cmds += "grep -q ' $c/proc ' /proc/mounts || mount -t proc proc $c/proc"
         if (cfg.sys) cmds += "grep -q ' $c/sys ' /proc/mounts || mount -t sysfs sysfs $c/sys"
-        if (cfg.dev) cmds += "grep -q ' $c/dev ' /proc/mounts || mount --bind /dev $c/dev"
+        if (cfg.dev) {
+            when (cfg.devMode) {
+                DevMode.BIND ->
+                    cmds += "grep -q ' $c/dev ' /proc/mounts || mount --bind /dev $c/dev"
+
+                DevMode.PRIVATE -> {
+                    cmds += "grep -q ' $c/dev ' /proc/mounts || " +
+                        "mount -t tmpfs -o mode=755,size=16M tmpfs $c/dev"
+                    // A private /dev starts empty, so the nodes a shell expects have to be
+                    // made by hand -- after the tmpfs is in place, or they land in the
+                    // rootfs and get hidden the moment it mounts.
+                    DEV_NODES.forEach { (name, major, minor) ->
+                        cmds += "[ -e $c/dev/$name ] || mknod -m 666 $c/dev/$name c $major $minor"
+                    }
+                }
+            }
+        }
 
         // Only now: binding /dev over $c/dev hides anything created under it beforehand,
         // so these two have to be made once the bind is in place or the mounts below
@@ -25,6 +52,10 @@ object MountPlan {
         if (cfg.devPts) {
             cmds += "mkdir -p $c/dev/pts"
             cmds += "grep -q ' $c/dev/pts ' /proc/mounts || mount -t devpts devpts $c/dev/pts"
+            if (cfg.devMode == DevMode.PRIVATE) {
+                // Android's /dev ships a ptmx; a private one has to borrow the devpts copy.
+                cmds += "[ -e $c/dev/ptmx ] || ln -s pts/ptmx $c/dev/ptmx"
+            }
         }
         if (cfg.shm) {
             cmds += "mkdir -p $c/dev/shm"

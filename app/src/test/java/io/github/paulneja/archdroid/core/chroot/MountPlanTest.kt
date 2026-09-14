@@ -1,5 +1,6 @@
 package io.github.paulneja.archdroid.core.chroot
 
+import io.github.paulneja.archdroid.data.model.DevMode
 import io.github.paulneja.archdroid.data.model.MountConfig
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -15,7 +16,7 @@ class MountPlanTest {
         val cmds = MountPlan.mountCommands(MountConfig(), c).joinToString("\n")
         assertTrue(cmds.contains("mount -t proc proc $c/proc"))
         assertTrue(cmds.contains("mount -t sysfs sysfs $c/sys"))
-        assertTrue(cmds.contains("mount --bind /dev $c/dev"))
+        assertTrue("something must be mounted at $c/dev", cmds.contains("tmpfs $c/dev"))
         assertTrue(cmds.contains("mount -t devpts devpts $c/dev/pts"))
         assertTrue(cmds.contains("size=256M"))
     }
@@ -26,7 +27,7 @@ class MountPlanTest {
         val cmds = MountPlan.mountCommands(cfg, c).joinToString("\n")
         assertFalse(cmds.contains("mount -t proc"))
         assertFalse(cmds.contains("mount -t sysfs"))
-        assertFalse(cmds.contains("tmpfs"))
+        assertFalse("the shm tmpfs must be gone", cmds.contains("$c/dev/shm"))
     }
 
     @Test
@@ -45,7 +46,7 @@ class MountPlanTest {
     fun `creates the dev subdirectories after binding dev over them`() {
         // mkdir before the bind is useless: the bind hides whatever was created, and the
         // devpts/shm mount points then resolve inside Android's own /dev.
-        val cmds = MountPlan.mountCommands(MountConfig(), c)
+        val cmds = MountPlan.mountCommands(MountConfig(devMode = DevMode.BIND), c)
         val bind = cmds.indexOfFirst { it.contains("mount --bind /dev") }
         val mkdirPts = cmds.indexOfLast { it.contains("mkdir") && it.contains("$c/dev/pts") }
         val mkdirShm = cmds.indexOfLast { it.contains("mkdir") && it.contains("$c/dev/shm") }
@@ -57,7 +58,7 @@ class MountPlanTest {
 
     @Test
     fun `mounts each dev subdirectory only after creating it`() {
-        val cmds = MountPlan.mountCommands(MountConfig(), c)
+        val cmds = MountPlan.mountCommands(MountConfig(devMode = DevMode.BIND), c)
         val mkdirShm = cmds.indexOfLast { it.contains("mkdir") && it.contains("$c/dev/shm") }
         val mountShm = cmds.indexOfFirst { it.contains("mount -t tmpfs") && it.contains("$c/dev/shm") }
         assertTrue("shm must be created before it is mounted", mkdirShm < mountShm)
