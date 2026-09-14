@@ -168,16 +168,24 @@ class ChrootInstaller(private val context: Context) {
     private suspend fun baseConfig(config: InstallConfig, onProgress: (Progress) -> Unit) {
         onProgress(Progress(Step.BASE_CONFIG))
         val env = config.env
-        val script = buildString {
-            appendLine("C=${quote(ChrootPaths.CHROOT_DIR)}")
-            appendLine(
-                "printf 'nameserver %s\\nnameserver %s\\n' ${quote(env.dnsPrimary)} " +
-                    "${quote(env.dnsSecondary)} > ${ChrootPaths.RESOLV_CONF}"
-            )
-            appendLine("echo ${quote(env.hostname)} > \"\$C/etc/hostname\"")
-        }
-        RootManager.execScript(script).also {
+        val etc = EtcConfig.resolvConfCommands(
+            ChrootPaths.CHROOT_DIR, env.dnsPrimary, env.dnsSecondary,
+        ) + EtcConfig.hostnameCommands(ChrootPaths.CHROOT_DIR, env.hostname)
+        RootManager.exec(*etc.toTypedArray()).also {
             if (!it.isSuccess) throw InstallException(Step.BASE_CONFIG, it.err.joinToString())
+        }
+
+        // pacman 7 sandboxes downloads with Landlock, which no Android kernel ships, and
+        // aborts before fetching anything. The fix belongs in the config so the user's own
+        // pacman calls in the terminal work too.
+        onProgress(Progress(Step.BASE_CONFIG, "pacman.conf"))
+        RootManager.exec(
+            *PacmanConf.androidCompatCommands("${ChrootPaths.CHROOT_DIR}/etc/pacman.conf")
+                .toTypedArray()
+        ).also {
+            if (!it.isSuccess) {
+                throw InstallException(Step.BASE_CONFIG, "pacman.conf: ${it.err.joinToString()}")
+            }
         }
 
         val mounted = MountManager.ensureMounted(MountConfig())

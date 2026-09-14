@@ -84,15 +84,10 @@ class ChrootController(
     }
 
     suspend fun applyEnv(env: EnvConfig) {
-        RootManager.execScript(
-            buildString {
-                appendLine(
-                    "printf 'nameserver %s\\nnameserver %s\\n' ${quote(env.dnsPrimary)} " +
-                        "${quote(env.dnsSecondary)} > ${ChrootPaths.RESOLV_CONF}"
-                )
-                appendLine("echo ${quote(env.hostname)} > ${ChrootPaths.CHROOT_DIR}/etc/hostname")
-            }
-        )
+        val cmds = EtcConfig.resolvConfCommands(
+            ChrootPaths.CHROOT_DIR, env.dnsPrimary, env.dnsSecondary,
+        ) + EtcConfig.hostnameCommands(ChrootPaths.CHROOT_DIR, env.hostname)
+        RootManager.exec(*cmds.toTypedArray())
     }
 
     suspend fun runInsideChroot(command: String) {
