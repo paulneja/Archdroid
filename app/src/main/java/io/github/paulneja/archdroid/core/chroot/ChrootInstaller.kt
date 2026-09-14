@@ -206,10 +206,11 @@ class ChrootInstaller(private val context: Context) {
         chrootBash(Step.USER, "pacman -S --needed --noconfirm sudo")
         chrootBash(Step.USER, "useradd -m -G wheel -s /bin/bash ${quote(user)}")
         chrootBash(Step.USER, "echo ${quote("$user:${config.password}")} | chpasswd")
-        chrootBash(
-            Step.USER,
-            "sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers"
-        )
+        Sudoers.grantWheelCommands().forEach { chrootBash(Step.USER, it) }
+
+        // The whole point of this step is a user that can actually log in, so confirm it
+        // exists rather than trust four commands that each reported success on their own.
+        chrootBash(Step.USER, "id ${quote(user)} >/dev/null")
     }
 
     private suspend fun installPackages(config: InstallConfig, onProgress: (Progress) -> Unit) {
