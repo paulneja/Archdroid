@@ -170,7 +170,8 @@ class ChrootInstaller(private val context: Context) {
         val env = config.env
         val etc = EtcConfig.resolvConfCommands(
             ChrootPaths.CHROOT_DIR, env.dnsPrimary, env.dnsSecondary,
-        ) + EtcConfig.hostnameCommands(ChrootPaths.CHROOT_DIR, env.hostname)
+        ) + EtcConfig.hostnameCommands(ChrootPaths.CHROOT_DIR, env.hostname) +
+            EtcConfig.mtabCommands(ChrootPaths.CHROOT_DIR)
         RootManager.exec(*etc.toTypedArray()).also {
             if (!it.isSuccess) throw InstallException(Step.BASE_CONFIG, it.err.joinToString())
         }

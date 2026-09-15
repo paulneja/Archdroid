@@ -20,6 +20,14 @@ object MountPlan {
         Triple("tty", 5, 0),
     )
 
+    /** Symlinks into /proc that a bare tmpfs /dev would otherwise be missing. */
+    private val DEV_LINKS = listOf(
+        "fd" to "/proc/self/fd",
+        "stdin" to "/proc/self/fd/0",
+        "stdout" to "/proc/self/fd/1",
+        "stderr" to "/proc/self/fd/2",
+    )
+
     fun mountCommands(cfg: MountConfig, chrootDir: String): List<String> {
         val c = chrootDir
         val cmds = mutableListOf("mkdir -p $c/proc $c/sys $c/dev $c/mnt")
@@ -39,6 +47,12 @@ object MountPlan {
                     // rootfs and get hidden the moment it mounts.
                     DEV_NODES.forEach { (name, major, minor) ->
                         cmds += "[ -e $c/dev/$name ] || mknod -m 666 $c/dev/$name c $major $minor"
+                    }
+                    // mkinitcpio decides whether /dev is mounted by testing for /dev/fd,
+                    // and shell redirections reach for /dev/stdin and its siblings. A bare
+                    // tmpfs has none of them; /proc is already mounted by this point.
+                    DEV_LINKS.forEach { (name, target) ->
+                        cmds += "ln -sf $target $c/dev/$name"
                     }
                 }
             }

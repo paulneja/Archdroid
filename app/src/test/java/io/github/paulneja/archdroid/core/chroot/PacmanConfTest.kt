@@ -1,5 +1,6 @@
 package io.github.paulneja.archdroid.core.chroot
 
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -30,6 +31,31 @@ class PacmanConfTest {
         // repository section where pacman ignores it.
         // escaped for sed: \[options\]
         assertTrue(cmds.contains("""\[options\]"""))
+    }
+
+    @Test
+    fun `turns off the free space check`() {
+        // Inside a chroot /proc/mounts carries the host's paths, so pacman cannot map
+        // /var/cache/pacman/pkg to a filesystem and refuses the transaction for lack of
+        // space on a device with hundreds of gigabytes free.
+        assertTrue(cmds.contains("CheckSpace"))
+    }
+
+    @Test
+    fun `leaves the kernel and firmware alone`() {
+        // A chroot boots nothing: linux-aarch64 is 370 MiB of kernel that can never run,
+        // and upgrading it fires mkinitcpio, which fails and takes the install with it.
+        assertTrue(cmds.contains("IgnorePkg"))
+        assertTrue(cmds.contains("linux-aarch64"))
+        assertTrue(cmds.contains("linux-firmware"))
+    }
+
+    @Test
+    fun `sticks to sed forms toybox understands`() {
+        // Android ships toybox sed, not GNU sed. An empty regex that reuses the previous
+        // one -- s//replacement/ -- is a GNU extension; toybox answers "no previous regex"
+        // and inserts nothing, silently leaving the option unset.
+        assertFalse("s// is a GNU extension", cmds.contains("s//"))
     }
 
     @Test

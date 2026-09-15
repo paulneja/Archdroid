@@ -33,6 +33,16 @@ class EtcConfigTest {
     }
 
     @Test
+    fun `mtab points at the live kernel mount table`() {
+        // Plenty of tools read /etc/mtab rather than /proc/mounts; the stock rootfs leaves
+        // it pointing nowhere useful once systemd is out of the picture.
+        val joined = EtcConfig.mtabCommands(c).joinToString("\n")
+        assertTrue(joined.contains("/proc/self/mounts"))
+        assertTrue(joined.contains("$c/etc/mtab"))
+        assertTrue("must replace whatever is there", joined.contains("ln -sf"))
+    }
+
+    @Test
     fun `hostname is quoted and written`() {
         val joined = EtcConfig.hostnameCommands(c, "arch droid").joinToString("\n")
         assertTrue(joined.contains("'arch droid'"))

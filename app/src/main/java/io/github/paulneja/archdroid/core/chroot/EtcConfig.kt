@@ -16,6 +16,10 @@ object EtcConfig {
         )
     }
 
+    /** Several tools consult /etc/mtab instead of /proc/mounts; point it somewhere real. */
+    fun mtabCommands(chrootDir: String): List<String> =
+        listOf("ln -sf /proc/self/mounts ${quote("$chrootDir/etc/mtab")}")
+
     fun hostnameCommands(chrootDir: String, hostname: String): List<String> =
         listOf("echo ${quote(hostname)} > ${quote("$chrootDir/etc/hostname")}")
 }
