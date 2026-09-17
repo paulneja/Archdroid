@@ -13,6 +13,11 @@ object EnterScript {
     fun build(cfg: AppSettings): String = buildString {
         val c = ChrootPaths.CHROOT_DIR
         appendLine("#!/system/bin/sh")
+        // The mounts the app makes through libsu live in that shell's mount namespace,
+        // and the terminal is a separate su process that may not share it -- the chroot
+        // still enters, but without the suid bind sudo cannot elevate. Mounting from here
+        // puts them in the same namespace as the session that is about to use them.
+        MountPlan.mountCommands(cfg.mounts, c).forEach { appendLine(it) }
         appendLine("export TERM=xterm-256color")
         appendLine("export COLORTERM=truecolor")
         appendLine("export LANG=${quote(cfg.env.lang)}")

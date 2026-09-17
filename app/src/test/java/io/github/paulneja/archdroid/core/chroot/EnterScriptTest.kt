@@ -11,6 +11,20 @@ import org.junit.Test
 class EnterScriptTest {
 
     @Test
+    fun `mounts everything itself before entering`() {
+        // libsu's mounts may sit in a different mount namespace from the terminal's own su
+        // process, which is how sudo ended up facing a nosuid filesystem inside a chroot
+        // the app had already remounted.
+        val script = EnterScript.build(AppSettings())
+        val bind = script.indexOf("mount --bind /data/local/arch /data/local/arch")
+        val suid = script.indexOf("remount,suid")
+        val enter = script.indexOf("exec chroot")
+        assertTrue("the self bind must be in the script", bind >= 0)
+        assertTrue("suid remount must be in the script", suid > bind)
+        assertTrue("mounts come before entering", suid < enter)
+    }
+
+    @Test
     fun `logs in as the configured user by default`() {
         val script = EnterScript.build(AppSettings(user = UserConfig(username = "paul")))
         assertTrue(script.startsWith("#!/system/bin/sh"))
