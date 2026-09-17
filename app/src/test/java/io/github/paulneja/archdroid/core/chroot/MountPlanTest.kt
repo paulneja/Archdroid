@@ -67,11 +67,11 @@ class MountPlanTest {
     @Test
     fun `expected mount points follow the config`() {
         assertEquals(
-            listOf("$c/proc", "$c/sys", "$c/dev", "$c/dev/pts", "$c/dev/shm"),
+            listOf(c, "$c/proc", "$c/sys", "$c/dev", "$c/dev/pts", "$c/dev/shm"),
             MountPlan.expectedMountPoints(MountConfig(), c),
         )
         assertEquals(
-            listOf("$c/proc"),
+            listOf(c, "$c/proc"),
             MountPlan.expectedMountPoints(
                 MountConfig(sys = false, dev = false, devPts = false, shm = false), c,
             ),
@@ -87,6 +87,7 @@ class MountPlanTest {
     @Test
     fun `missing mounts names exactly what did not come up`() {
         val procMounts = listOf(
+            "/dev/block/dm-9 /data/local/arch ext4 rw 0 0",
             "proc /data/local/arch/proc proc rw 0 0",
             "sysfs /data/local/arch/sys sysfs rw 0 0",
             "tmpfs /data/local/arch/dev tmpfs rw 0 0",
@@ -103,6 +104,23 @@ class MountPlanTest {
         val procMounts = MountPlan.expectedMountPoints(MountConfig(), c)
             .map { "src $it type rw 0 0" }
         assertTrue(MountPlan.missingMounts(procMounts, MountConfig(), c).isEmpty())
+    }
+
+    @Test
+    fun `binds the chroot onto itself before anything else`() {
+        // /data is nosuid, which leaves sudo unable to elevate. A self-bind gives the
+        // chroot its own mount that can carry suid, and it must be first because it lands
+        // on top of the directory and would hide mounts made before it.
+        val cmds = MountPlan.mountCommands(MountConfig(), c)
+        assertTrue(cmds[0].contains("mount --bind $c $c"))
+        assertTrue(cmds[1].contains("remount,suid,exec,dev $c"))
+    }
+
+    @Test
+    fun `the self bind is expected and unmounted last`() {
+        assertTrue(MountPlan.expectedMountPoints(MountConfig(), c).contains(c))
+        val un = MountPlan.unmountCommands(MountConfig(), c)
+        assertTrue("the outermost mount comes off last", un.last().contains("'$c'"))
     }
 
     @Test

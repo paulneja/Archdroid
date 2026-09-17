@@ -30,7 +30,15 @@ object MountPlan {
 
     fun mountCommands(cfg: MountConfig, chrootDir: String): List<String> {
         val c = chrootDir
-        val cmds = mutableListOf("mkdir -p $c/proc $c/sys $c/dev $c/mnt")
+        // /data is mounted nosuid, so sudo cannot elevate and every setuid binary in the
+        // rootfs is inert. Binding the chroot onto itself gives it a mount of its own that
+        // can carry suid without touching /data globally. It has to come first: this bind
+        // lands on top of $c and would hide anything already mounted underneath.
+        val cmds = mutableListOf(
+            "grep -q ' $c ' /proc/mounts || mount --bind $c $c",
+            "mount -o remount,suid,exec,dev $c",
+            "mkdir -p $c/proc $c/sys $c/dev $c/mnt",
+        )
 
         if (cfg.proc) cmds += "grep -q ' $c/proc ' /proc/mounts || mount -t proc proc $c/proc"
         if (cfg.sys) cmds += "grep -q ' $c/sys ' /proc/mounts || mount -t sysfs sysfs $c/sys"
@@ -92,7 +100,7 @@ object MountPlan {
     /** The mount points this config is supposed to bring up, outermost first. */
     fun expectedMountPoints(cfg: MountConfig, chrootDir: String): List<String> {
         val c = chrootDir
-        val points = mutableListOf<String>()
+        val points = mutableListOf(c)
         if (cfg.proc) points += "$c/proc"
         if (cfg.sys) points += "$c/sys"
         if (cfg.dev) points += "$c/dev"
@@ -123,7 +131,8 @@ object MountPlan {
         val c = chrootDir
         val points = mutableListOf<String>()
         if (cfg.bindSharedStorage) points += c + cfg.sharedStorageTarget
-        points += listOf("$c/dev/shm", "$c/dev/pts", "$c/dev", "$c/sys", "$c/proc")
+        // $c last: it is the outermost of the lot, the self-bind that carries suid.
+        points += listOf("$c/dev/shm", "$c/dev/pts", "$c/dev", "$c/sys", "$c/proc", c)
         return points
             .sortedByDescending { it.count { ch -> ch == '/' } }
             .map { "umount ${quote(it)} 2>/dev/null || umount -l ${quote(it)} 2>/dev/null || true" }
