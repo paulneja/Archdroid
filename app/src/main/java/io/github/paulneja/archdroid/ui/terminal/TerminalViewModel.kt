@@ -33,6 +33,7 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     val modifierState = ExtraKeysModifierState()
     val ctrlActive = MutableStateFlow(false)
     val altActive = MutableStateFlow(false)
+    val shiftActive = MutableStateFlow(false)
 
     // AndroidViewModel hands us the Application, not an Activity: safe to hold.
     val viewClient = ArchTerminalViewClient(app, { viewRef }, modifierState)
@@ -63,6 +64,7 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
         modifierState.onChange = {
             ctrlActive.value = modifierState.ctrlActive
             altActive.value = modifierState.altActive
+            shiftActive.value = modifierState.shiftActive
         }
         viewModelScope.launch {
             val result = chroot.prepareSession()
@@ -79,6 +81,9 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
                 _broken.value = missing
             } else {
                 createSession()
+                // Nothing raises the keyboard on its own, and a terminal with no way to
+                // type is not a terminal.
+                viewClient.showKeyboard()
             }
         }
     }
@@ -151,6 +156,10 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
 
     fun toggleCtrl() = modifierState.toggleCtrl()
     fun toggleAlt() = modifierState.toggleAlt()
+    fun toggleShift() = modifierState.toggleShift()
+
+    fun showKeyboard() = viewClient.showKeyboard()
+    fun toggleKeyboard() = viewClient.toggleKeyboard()
 
     fun closeAll() {
         _tabs.value.forEach { it.session.finishIfRunning() }

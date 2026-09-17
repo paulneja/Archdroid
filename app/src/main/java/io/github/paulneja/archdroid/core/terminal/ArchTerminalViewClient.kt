@@ -31,10 +31,28 @@ class ArchTerminalViewClient(
     }
 
     override fun onSingleTapUp(e: MotionEvent) {
+        showKeyboard()
+    }
+
+    /**
+     * SHOW_IMPLICIT is a hint the system is free to ignore, and it regularly does on a
+     * view that is not already focused. Taking focus first and asking without the flag is
+     * what actually raises the keyboard.
+     */
+    fun showKeyboard() {
         val view = viewProvider() ?: return
+        view.isFocusable = true
+        view.isFocusableInTouchMode = true
         view.requestFocus()
         val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+        imm.showSoftInput(view, 0)
+    }
+
+    fun toggleKeyboard() {
+        val view = viewProvider() ?: return
+        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
+        view.requestFocus()
     }
 
     override fun shouldBackButtonBeMappedToEscape(): Boolean = false
@@ -61,7 +79,15 @@ class ArchTerminalViewClient(
 
     override fun readFnKey(): Boolean = false
 
-    override fun onCodePoint(codePoint: Int, ctrlDown: Boolean, session: TerminalSession): Boolean = false
+    /**
+     * TerminalView has already captured the modifiers into locals by the time it calls
+     * this, so releasing them here leaves the current keypress intact and makes the next
+     * one start clean -- Ctrl then C is Ctrl+C, and the C after it is a plain C.
+     */
+    override fun onCodePoint(codePoint: Int, ctrlDown: Boolean, session: TerminalSession): Boolean {
+        modifierState.resetTransient()
+        return false
+    }
 
     override fun onEmulatorSet() {}
 

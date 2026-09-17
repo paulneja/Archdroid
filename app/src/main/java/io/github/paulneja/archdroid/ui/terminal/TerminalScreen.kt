@@ -1,6 +1,7 @@
 package io.github.paulneja.archdroid.ui.terminal
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,6 +61,7 @@ fun TerminalScreen(
     val broken by viewModel.broken.collectAsStateWithLifecycle()
     val ctrlActive by viewModel.ctrlActive.collectAsStateWithLifecycle()
     val altActive by viewModel.altActive.collectAsStateWithLifecycle()
+    val shiftActive by viewModel.shiftActive.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.onAllSessionsClosed = { onClose() }
@@ -143,6 +146,11 @@ fun TerminalScreen(
                         setTextSize(13)
                         setTypeface(android.graphics.Typeface.MONOSPACE)
                         keepScreenOn = true
+                        // Without focus the view gets no input connection and the soft
+                        // keyboard never appears.
+                        isFocusable = true
+                        isFocusableInTouchMode = true
+                        requestFocus()
                         viewModel.attachView(this)
                     }
                 },
@@ -219,6 +227,8 @@ fun TerminalScreen(
             ExtraKey("TAB") { viewModel.sendCodePoint(9) }
             ExtraKey("CTRL", active = ctrlActive) { viewModel.toggleCtrl() }
             ExtraKey("ALT", active = altActive) { viewModel.toggleAlt() }
+            ExtraKey("SHIFT", active = shiftActive) { viewModel.toggleShift() }
+            ExtraKey("KBD") { viewModel.toggleKeyboard() }
             ExtraKey("←") { viewModel.sendText("\u001B[D") }
             ExtraKey("↓") { viewModel.sendText("\u001B[B") }
             ExtraKey("↑") { viewModel.sendText("\u001B[A") }
@@ -241,10 +251,17 @@ private fun ExtraKey(
     active: Boolean = false,
     onClick: () -> Unit,
 ) {
+    // A held modifier has to be unmistakable: at a glance you need to know whether the
+    // next letter will be Ctrl+C or just a c.
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(6.dp))
-            .background(if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else KeyBg)
+            .background(if (active) MaterialTheme.colorScheme.primary else KeyBg)
+            .border(
+                width = if (active) 2.dp else 0.dp,
+                color = if (active) MaterialTheme.colorScheme.onPrimary else Color.Transparent,
+                shape = RoundedCornerShape(6.dp),
+            )
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
@@ -252,7 +269,9 @@ private fun ExtraKey(
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+            color = if (active) MaterialTheme.colorScheme.onPrimary
+            else MaterialTheme.colorScheme.onSurface,
             fontFamily = FontFamily.Monospace,
         )
     }
