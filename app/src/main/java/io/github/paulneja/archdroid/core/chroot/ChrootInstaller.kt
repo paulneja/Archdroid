@@ -6,7 +6,9 @@ import io.github.paulneja.archdroid.core.util.RootTar
 import io.github.paulneja.archdroid.core.util.ShellQuote.quote
 import io.github.paulneja.archdroid.data.model.InstallConfig
 import io.github.paulneja.archdroid.data.model.MountConfig
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -43,15 +45,22 @@ class ChrootInstaller(private val context: Context) {
         config: InstallConfig,
         onProgress: (Progress) -> Unit,
         onLog: (String) -> Unit = {},
-    ): Result<Unit> = runCatching {
-        log = onLog
-        download(config, onProgress)
-        verify(config, onProgress)
-        extract(onProgress)
-        baseConfig(config, onProgress)
-        createUser(config, onProgress)
-        installPackages(config, onProgress)
-        cleanup(onProgress)
+    ): Result<Unit> {
+        return try {
+            log = onLog
+            download(config, onProgress)
+            verify(config, onProgress)
+            extract(onProgress)
+            baseConfig(config, onProgress)
+            createUser(config, onProgress)
+            installPackages(config, onProgress)
+            cleanup(onProgress)
+            Result.success(Unit)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (failure: Throwable) {
+            Result.failure(failure)
+        }
     }
 
     private var log: (String) -> Unit = {}
@@ -70,52 +79,67 @@ class ChrootInstaller(private val context: Context) {
             }
 
             val partial = partialFile()
-            val already = if (partial.isFile) partial.length() else 0L
-            onProgress(Progress(Step.DOWNLOAD, url, already, -1L))
+            val initialBytes = if (partial.isFile) partial.length() else 0L
+            DownloadRetry().run(
+                initialBytes = initialBytes,
+                currentBytes = { if (partial.isFile) partial.length() else 0L },
+            ) { already ->
+                downloadAttempt(url, partial, already, onProgress)
+            }.getOrThrow()
+        }
 
-            val request = Request.Builder().url(url).get()
-                .apply { if (already > 0) header("Range", "bytes=$already-") }
-                .build()
+    private suspend fun downloadAttempt(
+        url: String,
+        partial: File,
+        already: Long,
+        onProgress: (Progress) -> Unit,
+    ) {
+        onProgress(Progress(Step.DOWNLOAD, url, already, -1L))
 
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    throw InstallException(Step.DOWNLOAD, "HTTP ${response.code} from $url")
-                }
-                val body = response.body
-                    ?: throw InstallException(Step.DOWNLOAD, "empty body from $url")
+        val request = Request.Builder().url(url).get()
+            .apply { if (already > 0) header("Range", "bytes=$already-") }
+            .build()
 
-                // 206 means the server resumed; anything else restarts from zero.
-                val resumed = response.code == 206 && already > 0
-                val base = if (resumed) already else 0L
-                if (!resumed && already > 0) partial.delete()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw InstallException(Step.DOWNLOAD, "HTTP ${response.code} from $url")
+            }
+            val body = response.body
+                ?: throw InstallException(Step.DOWNLOAD, "empty body from $url")
 
-                val total = body.contentLength().let { if (it >= 0) it + base else -1L }
-                var downloaded = base
-                var lastReport = base
+            // 206 means the server resumed; anything else restarts from zero.
+            val resumed = response.code == 206 && already > 0
+            val base = if (resumed) already else 0L
+            if (!resumed && already > 0) partial.delete()
 
-                body.byteStream().use { input ->
-                    FileOutputStream(partial, resumed).buffered().use { output ->
-                        val buffer = ByteArray(64 * 1024)
-                        while (true) {
-                            ensureActive()
-                            val read = input.read(buffer)
-                            if (read < 0) break
-                            output.write(buffer, 0, read)
-                            downloaded += read
-                            if (downloaded - lastReport > 512 * 1024) {
-                                lastReport = downloaded
-                                onProgress(Progress(Step.DOWNLOAD, url, downloaded, total))
-                            }
+            val total = body.contentLength().let { if (it >= 0) it + base else -1L }
+            var downloaded = base
+            var lastReport = base
+
+            body.byteStream().use { input ->
+                FileOutputStream(partial, resumed).buffered().use { output ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        currentCoroutineContext().ensureActive()
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        output.write(buffer, 0, read)
+                        downloaded += read
+                        if (downloaded - lastReport > 512 * 1024) {
+                            lastReport = downloaded
+                            onProgress(Progress(Step.DOWNLOAD, url, downloaded, total))
                         }
                     }
                 }
-                dest.delete()
-                if (!partial.renameTo(dest)) {
-                    throw InstallException(Step.DOWNLOAD, "cannot move download into place")
-                }
-                onProgress(Progress(Step.DOWNLOAD, url, downloaded, downloaded))
             }
+            val dest = tarballFile()
+            dest.delete()
+            if (!partial.renameTo(dest)) {
+                throw InstallException(Step.DOWNLOAD, "cannot move download into place")
+            }
+            onProgress(Progress(Step.DOWNLOAD, url, downloaded, downloaded))
         }
+    }
 
     private suspend fun verify(config: InstallConfig, onProgress: (Progress) -> Unit) =
         withContext(Dispatchers.IO) {
