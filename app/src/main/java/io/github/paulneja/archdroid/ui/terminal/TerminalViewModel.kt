@@ -12,6 +12,7 @@ import io.github.paulneja.archdroid.core.chroot.ChrootController
 import io.github.paulneja.archdroid.core.terminal.ArchTerminalSessionClient
 import io.github.paulneja.archdroid.core.terminal.ArchTerminalViewClient
 import io.github.paulneja.archdroid.core.terminal.ExtraKeysModifierState
+import io.github.paulneja.archdroid.core.terminal.SessionProcessTree
 import io.github.paulneja.archdroid.core.terminal.TerminalSessionFactory
 import io.github.paulneja.archdroid.di.ServiceLocator
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,7 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
         val id: String = UUID.randomUUID().toString(),
         val session: TerminalSession,
         val title: MutableStateFlow<String> = MutableStateFlow("shell"),
+        val closing: MutableStateFlow<Boolean> = MutableStateFlow(false),
     )
 
     val modifierState = ExtraKeysModifierState()
@@ -49,6 +51,9 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _error = MutableStateFlow<String?>(null)
     val error = _error.asStateFlow()
+
+    private val _closeError = MutableStateFlow<String?>(null)
+    val closeError = _closeError.asStateFlow()
 
     /** Essential paths missing from the rootfs; non-empty means it cannot be entered. */
     private val _broken = MutableStateFlow<List<String>>(emptyList())
@@ -129,19 +134,41 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun closeTab(index: Int) {
-        _tabs.value.getOrNull(index)?.session?.finishIfRunning()
+        val tab = _tabs.value.getOrNull(index) ?: return
+        if (tab.closing.value) return
+        tab.closing.value = true
+        _closeError.value = null
+        viewModelScope.launch {
+            SessionProcessTree.terminate(tab.session.pid).onFailure { failure ->
+                if (_tabs.value.any { it.id == tab.id }) {
+                    tab.closing.value = false
+                    _closeError.value = failure.message ?: failure.javaClass.simpleName
+                }
+            }
+        }
     }
 
     private fun removeSession(session: TerminalSession) {
-        val index = _tabs.value.indexOfFirst { it.session == session }
+        val oldTabs = _tabs.value
+        val index = oldTabs.indexOfFirst { it.session == session }
         if (index < 0) return
-        _tabs.value = _tabs.value.toMutableList().apply { removeAt(index) }
+        val newIndex = TerminalTabState.afterRemoval(
+            size = oldTabs.size,
+            activeIndex = _activeIndex.value,
+            removedIndex = index,
+        )
+        _tabs.value = oldTabs.toMutableList().apply { removeAt(index) }
         if (_tabs.value.isEmpty()) {
-            viewModelScope.launch { chroot.releaseSession(remainingSessions = 0) }
-            onAllSessionsClosed?.invoke()
+            _activeIndex.value = -1
+            viewModelScope.launch {
+                val result = chroot.releaseSession(remainingSessions = 0)
+                if (result != null && !result.ok) {
+                    _error.value = result.log.joinToString("\n")
+                }
+                onAllSessionsClosed?.invoke()
+            }
             return
         }
-        val newIndex = _activeIndex.value.coerceAtMost(_tabs.value.lastIndex)
         _activeIndex.value = newIndex
         viewRef?.attachSession(_tabs.value[newIndex].session)
     }

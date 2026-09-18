@@ -33,6 +33,7 @@
     <string name="terminal_mount_error">Failed to prepare chroot:\n%1$s</string>
     <string name="terminal_new_tab">New tab</string>
     <string name="terminal_close_tab">Close tab</string>
+    <string name="terminal_close_failed">Could not close this terminal session:\n%1$s</string>
 
     <string name="wizard_title">Install Arch Linux</string>
     <string name="wizard_step">Step %1$d of %2$d</string>

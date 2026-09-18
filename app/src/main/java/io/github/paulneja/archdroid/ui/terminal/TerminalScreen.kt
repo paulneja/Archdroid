@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,6 +60,7 @@ fun TerminalScreen(
     val activeIndex by viewModel.activeIndex.collectAsStateWithLifecycle()
     val preparing by viewModel.preparing.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val closeError by viewModel.closeError.collectAsStateWithLifecycle()
     val broken by viewModel.broken.collectAsStateWithLifecycle()
     val ctrlActive by viewModel.ctrlActive.collectAsStateWithLifecycle()
     val altActive by viewModel.altActive.collectAsStateWithLifecycle()
@@ -95,6 +98,7 @@ fun TerminalScreen(
             ) {
                 tabs.forEachIndexed { index, tab ->
                     val title by tab.title.collectAsStateWithLifecycle()
+                    val closing by tab.closing.collectAsStateWithLifecycle()
                     val selected = index == activeIndex
                     Row(
                         modifier = Modifier
@@ -113,15 +117,25 @@ fun TerminalScreen(
                             fontFamily = FontFamily.Monospace,
                             maxLines = 1,
                         )
-                        Icon(
-                            Icons.Rounded.Close,
-                            contentDescription = stringResource(R.string.terminal_close_tab),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
-                                .padding(start = 6.dp)
-                                .height(14.dp)
-                                .clickable { viewModel.closeTab(index) },
-                        )
+                        if (closing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .padding(start = 6.dp)
+                                    .size(14.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            Icon(
+                                Icons.Rounded.Close,
+                                contentDescription = stringResource(R.string.terminal_close_tab),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .padding(start = 6.dp)
+                                    .size(14.dp)
+                                    .clickable { viewModel.closeTab(index) },
+                            )
+                        }
                     }
                 }
             }
@@ -209,6 +223,17 @@ fun TerminalScreen(
                     fontFamily = FontFamily.Monospace,
                     modifier = Modifier
                         .align(Alignment.Center)
+                        .padding(24.dp),
+                )
+            }
+            closeError?.let {
+                Text(
+                    text = stringResource(R.string.terminal_close_failed, it),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
                         .padding(24.dp),
                 )
             }
