@@ -65,6 +65,28 @@
     <string name="wizard_failed_title">La instalación falló</string>
     <string name="wizard_finish">Finalizar</string>
 
+    <string name="notification_channel_install">Instalación</string>
+    <string name="notification_channel_install_description">Progreso de la instalación de Arch Linux</string>
+    <string name="notification_channel_events">Resultados de instalación</string>
+    <string name="notification_channel_events_description">Avisos de instalaciones completadas o fallidas</string>
+    <string name="notification_install_title">Instalando Arch Linux</string>
+    <string name="notification_preparing">Preparando la instalación…</string>
+    <string name="notification_paused_title">Instalación pausada</string>
+    <string name="notification_paused_body">Pausada en %1$s</string>
+    <string name="notification_success_title">Arch Linux instalado</string>
+    <string name="notification_success_body">El chroot está listo para usar.</string>
+    <string name="notification_failed_title">Falló la instalación</string>
+    <string name="notification_cancelled_title">Instalación cancelada</string>
+    <string name="notification_cancelled_body">La descarga parcial se conservó para un próximo intento.</string>
+    <string name="notification_progress_bytes">%1$s / %2$s</string>
+    <string name="notification_rate">%1$s/s</string>
+    <string name="notification_eta">%1$s restantes</string>
+    <string name="notification_action_pause">Pausar</string>
+    <string name="notification_action_resume">Reanudar</string>
+    <string name="notification_action_cancel">Cancelar</string>
+    <string name="notification_action_retry">Reintentar</string>
+    <string name="notification_action_open_terminal">Abrir terminal</string>
+
     <string name="settings_mounts">Montajes</string>
     <string name="settings_env">Entorno</string>
     <string name="settings_user">Usuario</string>

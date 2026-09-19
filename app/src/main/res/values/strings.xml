@@ -65,6 +65,28 @@
     <string name="wizard_failed_title">Installation failed</string>
     <string name="wizard_finish">Finish</string>
 
+    <string name="notification_channel_install">Installation</string>
+    <string name="notification_channel_install_description">Ongoing Arch Linux installation progress</string>
+    <string name="notification_channel_events">Installation results</string>
+    <string name="notification_channel_events_description">Completed and failed installation alerts</string>
+    <string name="notification_install_title">Installing Arch Linux</string>
+    <string name="notification_preparing">Preparing installation…</string>
+    <string name="notification_paused_title">Installation paused</string>
+    <string name="notification_paused_body">Paused at %1$s</string>
+    <string name="notification_success_title">Arch Linux installed</string>
+    <string name="notification_success_body">The chroot is ready to use.</string>
+    <string name="notification_failed_title">Installation failed</string>
+    <string name="notification_cancelled_title">Installation cancelled</string>
+    <string name="notification_cancelled_body">The partial download was kept for a future attempt.</string>
+    <string name="notification_progress_bytes">%1$s / %2$s</string>
+    <string name="notification_rate">%1$s/s</string>
+    <string name="notification_eta">%1$s remaining</string>
+    <string name="notification_action_pause">Pause</string>
+    <string name="notification_action_resume">Resume</string>
+    <string name="notification_action_cancel">Cancel</string>
+    <string name="notification_action_retry">Retry</string>
+    <string name="notification_action_open_terminal">Open terminal</string>
+
     <string name="settings_mounts">Mounts</string>
     <string name="settings_env">Environment</string>
     <string name="settings_user">User</string>

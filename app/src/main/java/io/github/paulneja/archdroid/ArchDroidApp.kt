@@ -2,6 +2,7 @@ package io.github.paulneja.archdroid
 
 import android.app.Application
 import com.topjohnwu.superuser.Shell
+import io.github.paulneja.archdroid.core.notify.ArchDroidNotifications
 
 class ArchDroidApp : Application() {
 
@@ -13,5 +14,6 @@ class ArchDroidApp : Application() {
                 .setFlags(Shell.FLAG_MOUNT_MASTER)
                 .setTimeout(20)
         )
+        ArchDroidNotifications.createChannels(this)
     }
 }

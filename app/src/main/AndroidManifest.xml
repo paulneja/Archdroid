@@ -31,6 +31,11 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name=".core.service.ArchDroidService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
         <receiver
             android:name=".core.boot.BootReceiver"
             android:enabled="true"
