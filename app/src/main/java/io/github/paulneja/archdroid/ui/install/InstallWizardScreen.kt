@@ -1,5 +1,10 @@
 package io.github.paulneja.archdroid.ui.install
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,15 +36,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.core.content.ContextCompat
 import com.kyant.backdrop.Backdrop
 import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.core.chroot.ChrootInstaller
+import io.github.paulneja.archdroid.core.service.InstallState
 import io.github.paulneja.archdroid.ui.components.GlassCard
 import io.github.paulneja.archdroid.ui.components.LiquidButton
 import io.github.paulneja.archdroid.ui.components.LiquidToggle
@@ -53,6 +61,24 @@ fun InstallWizardScreen(
     viewModel: InstallWizardViewModel = viewModel(),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val notificationPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        viewModel.setNotificationsDenied(!granted)
+        viewModel.install()
+    }
+    val requestPermissionAndInstall = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            viewModel.setNotificationsDenied(false)
+            viewModel.install()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -97,7 +123,37 @@ fun InstallWizardScreen(
             ) {
                 Text(stringResource(R.string.wizard_finish), style = MaterialTheme.typography.titleSmall)
             }
-            ui.running -> {}
+            ui.installState == InstallState.Queued || ui.installState is InstallState.Running ->
+                InstallActionButtons(
+                    backdrop = backdrop,
+                    primaryLabel = stringResource(R.string.wizard_pause),
+                    onPrimary = viewModel::pause,
+                    onCancel = viewModel::cancel,
+                )
+            ui.installState is InstallState.Paused -> InstallActionButtons(
+                backdrop = backdrop,
+                primaryLabel = stringResource(R.string.wizard_resume),
+                onPrimary = viewModel::resume,
+                onCancel = viewModel::cancel,
+            )
+            ui.installState is InstallState.Failed -> LiquidButton(
+                onClick = viewModel::retry,
+                backdrop = backdrop,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    stringResource(R.string.wizard_retry_install),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
+            ui.installState == InstallState.Cancelled -> LiquidButton(
+                onClick = onDone,
+                backdrop = backdrop,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.wizard_finish), style = MaterialTheme.typography.titleSmall)
+            }
             else -> Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -113,7 +169,7 @@ fun InstallWizardScreen(
                 }
                 val isLast = ui.page == 3
                 LiquidButton(
-                    onClick = { if (isLast) viewModel.install() else viewModel.nextPage() },
+                    onClick = { if (isLast) requestPermissionAndInstall() else viewModel.nextPage() },
                     backdrop = backdrop,
                     tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                     enabled = !isLast || viewModel.canInstall(),
@@ -125,6 +181,38 @@ fun InstallWizardScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun InstallActionButtons(
+    backdrop: Backdrop,
+    primaryLabel: String,
+    onPrimary: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        LiquidButton(
+            onClick = onPrimary,
+            backdrop = backdrop,
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(primaryLabel, style = MaterialTheme.typography.titleSmall)
+        }
+        LiquidButton(
+            onClick = onCancel,
+            backdrop = backdrop,
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(
+                stringResource(R.string.wizard_cancel_install),
+                style = MaterialTheme.typography.titleSmall,
+            )
         }
     }
 }
@@ -301,6 +389,22 @@ private fun ProgressPage(backdrop: Backdrop, ui: InstallWizardViewModel.UiState)
             LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
         Spacer(Modifier.height(16.dp))
+        if (ui.notificationsDenied) {
+            Text(
+                text = stringResource(R.string.wizard_notifications_denied),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            Spacer(Modifier.height(12.dp))
+        }
+        if (ui.installState == InstallState.Cancelled) {
+            Text(
+                text = stringResource(R.string.wizard_cancelled),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(12.dp))
+        }
         GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth()) {
             Column(
                 Modifier

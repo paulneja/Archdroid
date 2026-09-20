@@ -13,6 +13,7 @@ import io.github.paulneja.archdroid.MainActivity
 import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.core.chroot.ChrootInstaller
 import io.github.paulneja.archdroid.core.service.ArchDroidService
+import io.github.paulneja.archdroid.ui.Routes
 
 class ArchDroidNotifications(private val context: Context) {
 
@@ -157,12 +158,17 @@ class ArchDroidNotifications(private val context: Context) {
                 InstallNotificationAction.RETRY -> ArchDroidService.ACTION_RETRY to 14
                 InstallNotificationAction.OPEN_TERMINAL -> error("handled above")
             }
-            PendingIntent.getService(
-                context,
-                requestCode,
-                Intent(context, ArchDroidService::class.java).setAction(serviceAction),
-                PENDING_INTENT_FLAGS,
-            )
+            val intent = Intent(context, ArchDroidService::class.java).setAction(serviceAction)
+            if (action == InstallNotificationAction.RESUME || action == InstallNotificationAction.RETRY) {
+                PendingIntent.getForegroundService(
+                    context,
+                    requestCode,
+                    intent,
+                    PENDING_INTENT_FLAGS,
+                )
+            } else {
+                PendingIntent.getService(context, requestCode, intent, PENDING_INTENT_FLAGS)
+            }
         }
     }
 
@@ -178,7 +184,7 @@ class ArchDroidNotifications(private val context: Context) {
         21,
         Intent(context, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            .putExtra(EXTRA_OPEN_TERMINAL, true),
+            .putExtra(MainActivity.EXTRA_ROUTE, Routes.TERMINAL),
         PENDING_INTENT_FLAGS,
     )
 
@@ -201,8 +207,6 @@ class ArchDroidNotifications(private val context: Context) {
         const val CHANNEL_EVENTS = "events"
         const val INSTALL_NOTIFICATION_ID = 1001
         const val EVENT_NOTIFICATION_ID = 1002
-        const val EXTRA_OPEN_TERMINAL = "io.github.paulneja.archdroid.OPEN_TERMINAL"
-
         private const val PENDING_INTENT_FLAGS =
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 

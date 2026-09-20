@@ -15,6 +15,7 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,7 +51,11 @@ import io.github.paulneja.archdroid.ui.theme.BgDeepBottom
 import io.github.paulneja.archdroid.ui.theme.BgDeepTop
 
 @Composable
-fun AppRoot(viewModel: AppViewModel = viewModel()) {
+fun AppRoot(
+    requestedRoute: String? = null,
+    onRouteConsumed: () -> Unit = {},
+    viewModel: AppViewModel = viewModel(),
+) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
 
     ArchDroidTheme(dynamicColor = settings.dynamicColor) {
@@ -73,20 +78,32 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
                 AppViewModel.RootState.DENIED ->
                     RootCheckScreen(backgroundBackdrop, checking = false, onRetry = viewModel::checkRoot)
                 AppViewModel.RootState.GRANTED ->
-                    MainScaffold(viewModel, backgroundBackdrop)
+                    MainScaffold(viewModel, backgroundBackdrop, requestedRoute, onRouteConsumed)
             }
         }
     }
 }
 
 @Composable
-private fun MainScaffold(viewModel: AppViewModel, backgroundBackdrop: Backdrop) {
+private fun MainScaffold(
+    viewModel: AppViewModel,
+    backgroundBackdrop: Backdrop,
+    requestedRoute: String?,
+    onRouteConsumed: () -> Unit,
+) {
     // Captures the scrolling content so the floating bar refracts whatever passes under
     // it. Safe only because the bar is a sibling of the NavHost, never one of its children.
     val contentBackdrop = rememberLayerBackdrop { drawContent() }
     val navController = rememberNavController()
     val status by viewModel.chroot.status.collectAsStateWithLifecycle()
     val startRoute = if (status == ChrootStatus.NOT_INSTALLED) Routes.INSTALL else Routes.HOME
+
+    LaunchedEffect(requestedRoute) {
+        if (Routes.acceptsExternalRequest(requestedRoute)) {
+            navController.navigate(requestedRoute!!) { launchSingleTop = true }
+        }
+        if (requestedRoute != null) onRouteConsumed()
+    }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route

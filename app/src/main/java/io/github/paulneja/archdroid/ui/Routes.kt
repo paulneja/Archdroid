@@ -11,4 +11,6 @@ object Routes {
     const val SETTINGS_BACKUP = "settings/backup"
     const val SETTINGS_ABOUT = "settings/about"
     const val INSTALL = "install"
+
+    fun acceptsExternalRequest(route: String?): Boolean = route == TERMINAL
 }

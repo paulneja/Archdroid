@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.IBinder
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import io.github.paulneja.archdroid.core.notify.ArchDroidNotifications
 import io.github.paulneja.archdroid.core.notify.InstallNotificationModel
 import io.github.paulneja.archdroid.di.ServiceLocator
@@ -120,5 +121,24 @@ class ArchDroidService : Service() {
         const val ACTION_RESUME = "io.github.paulneja.archdroid.action.RESUME_INSTALL"
         const val ACTION_CANCEL = "io.github.paulneja.archdroid.action.CANCEL_INSTALL"
         const val ACTION_RETRY = "io.github.paulneja.archdroid.action.RETRY_INSTALL"
+
+        fun start(context: android.content.Context) = startForegroundAction(context, ACTION_START)
+        fun resume(context: android.content.Context) = startForegroundAction(context, ACTION_RESUME)
+        fun retry(context: android.content.Context) = startForegroundAction(context, ACTION_RETRY)
+        fun pause(context: android.content.Context) = startAction(context, ACTION_PAUSE)
+        fun cancel(context: android.content.Context) = startAction(context, ACTION_CANCEL)
+
+        private fun startForegroundAction(context: android.content.Context, action: String) {
+            ContextCompat.startForegroundService(
+                context.applicationContext,
+                Intent(context.applicationContext, ArchDroidService::class.java).setAction(action),
+            )
+        }
+
+        private fun startAction(context: android.content.Context, action: String) {
+            context.applicationContext.startService(
+                Intent(context.applicationContext, ArchDroidService::class.java).setAction(action)
+            )
+        }
     }
 }

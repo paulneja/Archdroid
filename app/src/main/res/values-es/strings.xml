@@ -64,6 +64,12 @@
     <string name="wizard_done_body">Tu chroot en /data/local/arch está listo. Abrí la terminal para empezar a usarlo.</string>
     <string name="wizard_failed_title">La instalación falló</string>
     <string name="wizard_finish">Finalizar</string>
+    <string name="wizard_pause">Pausar</string>
+    <string name="wizard_resume">Reanudar</string>
+    <string name="wizard_cancel_install">Cancelar instalación</string>
+    <string name="wizard_retry_install">Reintentar instalación</string>
+    <string name="wizard_cancelled">Instalación cancelada. La descarga parcial se conservó.</string>
+    <string name="wizard_notifications_denied">Las notificaciones están desactivadas. La instalación continúa, pero el progreso y las acciones solo serán visibles mientras ArchDroid esté abierto.</string>
 
     <string name="notification_channel_install">Instalación</string>
     <string name="notification_channel_install_description">Progreso de la instalación de Arch Linux</string>
