@@ -7,6 +7,8 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -97,6 +99,31 @@ class InstallCoordinatorTest {
     }
 
     @Test
+    fun `pause stays stopping until the installer has actually stopped`() = runTest {
+        val entered = CompletableDeferred<Unit>()
+        val mayStop = CompletableDeferred<Unit>()
+        val coordinator = coordinator(backgroundScope) { _, _, _ ->
+            entered.complete(Unit)
+            try {
+                awaitCancellation()
+            } finally {
+                withContext(NonCancellable) { mayStop.await() }
+            }
+        }
+        coordinator.queue(config)
+        coordinator.startQueued()
+        entered.await()
+
+        coordinator.pause()
+        runCurrent()
+        assertTrue(coordinator.state.value is InstallState.Stopping)
+
+        mayStop.complete(Unit)
+        runCurrent()
+        assertTrue(coordinator.state.value is InstallState.Paused)
+    }
+
+    @Test
     fun `success runs completion and becomes succeeded`() = runTest {
         var completedWith: InstallConfig? = null
         val coordinator = coordinator(
@@ -143,6 +170,26 @@ class InstallCoordinatorTest {
         coordinator.startQueued()
         runCurrent()
         assertTrue(coordinator.state.value is InstallState.Failed)
+
+        coordinator.retry()
+        runCurrent()
+
+        assertEquals(2, executions)
+        assertEquals(InstallState.Succeeded, coordinator.state.value)
+    }
+
+    @Test
+    fun `cancelled installation can retry from its preserved config`() = runTest {
+        var executions = 0
+        val coordinator = coordinator(backgroundScope) { _, _, _ ->
+            executions += 1
+            if (executions == 1) awaitCancellation() else Result.success(Unit)
+        }
+        coordinator.queue(config)
+        coordinator.startQueued()
+        runCurrent()
+        coordinator.cancel()
+        runCurrent()
 
         coordinator.retry()
         runCurrent()

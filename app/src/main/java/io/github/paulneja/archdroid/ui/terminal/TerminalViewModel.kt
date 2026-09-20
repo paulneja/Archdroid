@@ -28,9 +28,14 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     class Tab(
         val id: String = UUID.randomUUID().toString(),
         val session: TerminalSession,
+        val processIdentity: SessionProcessTree.ProcessIdentity?,
         val title: MutableStateFlow<String> = MutableStateFlow("shell"),
         val closing: MutableStateFlow<Boolean> = MutableStateFlow(false),
-    )
+    ) {
+        var exitObserved = false
+        var terminationSucceeded = false
+        var closeFailed = false
+    }
 
     val modifierState = ExtraKeysModifierState()
     val ctrlActive = MutableStateFlow(false)
@@ -106,21 +111,23 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     fun activeTab(): Tab? = _tabs.value.getOrNull(_activeIndex.value)
 
     fun createSession() {
-        val tab = Tab(
-            session = TerminalSessionFactory.create(
-                ArchTerminalSessionClient(
-                    context = getApplication(),
-                    viewProvider = { viewRef },
-                    notifyFinished = { s -> mainHandler.post { removeSession(s) } },
-                    notifyTitleChanged = { s ->
-                        mainHandler.post {
-                            _tabs.value.find { it.session == s }?.let { tab ->
-                                s.title?.takeIf { it.isNotBlank() }?.let { tab.title.value = it }
-                            }
+        val session = TerminalSessionFactory.create(
+            ArchTerminalSessionClient(
+                context = getApplication(),
+                viewProvider = { viewRef },
+                notifyFinished = { s -> mainHandler.post { removeSession(s) } },
+                notifyTitleChanged = { s ->
+                    mainHandler.post {
+                        _tabs.value.find { it.session == s }?.let { tab ->
+                            s.title?.takeIf { it.isNotBlank() }?.let { tab.title.value = it }
                         }
-                    },
-                )
+                    }
+                },
             )
+        )
+        val tab = Tab(
+            session = session,
+            processIdentity = runCatching { SessionProcessTree.readIdentity(session.pid) }.getOrNull(),
         )
         _tabs.value = _tabs.value + tab
         _activeIndex.value = _tabs.value.lastIndex
@@ -136,19 +143,45 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     fun closeTab(index: Int) {
         val tab = _tabs.value.getOrNull(index) ?: return
         if (tab.closing.value) return
+        val identity = tab.processIdentity
+        if (identity == null) {
+            _closeError.value = "could not read the terminal process identity"
+            return
+        }
         tab.closing.value = true
+        tab.closeFailed = false
+        tab.terminationSucceeded = false
         _closeError.value = null
         viewModelScope.launch {
-            SessionProcessTree.terminate(tab.session.pid).onFailure { failure ->
-                if (_tabs.value.any { it.id == tab.id }) {
-                    tab.closing.value = false
-                    _closeError.value = failure.message ?: failure.javaClass.simpleName
-                }
-            }
+            SessionProcessTree.terminate(identity).fold(
+                onSuccess = {
+                    tab.terminationSucceeded = true
+                    if (TerminalTabState.canFinalizeClose(tab.exitObserved, tab.terminationSucceeded)) {
+                        finalizeSession(tab.session)
+                    }
+                },
+                onFailure = { failure ->
+                    if (_tabs.value.any { it.id == tab.id }) {
+                        tab.closeFailed = true
+                        tab.terminationSucceeded = false
+                        tab.closing.value = false
+                        _closeError.value = failure.message ?: failure.javaClass.simpleName
+                    }
+                },
+            )
         }
     }
 
     private fun removeSession(session: TerminalSession) {
+        val tab = _tabs.value.firstOrNull { it.session == session } ?: return
+        if (tab.closing.value || tab.closeFailed) {
+            tab.exitObserved = true
+            if (!TerminalTabState.canFinalizeClose(tab.exitObserved, tab.terminationSucceeded)) return
+        }
+        finalizeSession(session)
+    }
+
+    private fun finalizeSession(session: TerminalSession) {
         val oldTabs = _tabs.value
         val index = oldTabs.indexOfFirst { it.session == session }
         if (index < 0) return

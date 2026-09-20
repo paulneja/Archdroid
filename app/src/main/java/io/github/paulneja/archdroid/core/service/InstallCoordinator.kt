@@ -58,13 +58,17 @@ class InstallCoordinator(
             }
             resumeWhenStopped = false
             val running = lastRunning ?: InstallState.Running(ChrootInstaller.Step.DOWNLOAD)
-            _state.value = InstallState.Paused(
-                step = running.step,
-                detail = running.detail,
-                downloadedBytes = running.downloadedBytes,
-                totalBytes = running.totalBytes,
-            )
-            installJob
+            installJob?.also {
+                _state.value = InstallState.Stopping(InstallState.StopTarget.PAUSE, running)
+            } ?: run {
+                _state.value = InstallState.Paused(
+                    running.step,
+                    running.detail,
+                    running.downloadedBytes,
+                    running.totalBytes,
+                )
+                null
+            }
         }
         job?.cancel(CancellationException("installation paused"))
     }
@@ -88,20 +92,37 @@ class InstallCoordinator(
                 return
             }
             resumeWhenStopped = false
-            _state.value = InstallState.Cancelled
+            if (_state.value is InstallState.Paused && installJob == null) {
+                _state.value = InstallState.Cancelled
+                return@synchronized null
+            }
+            val running = lastRunning ?: InstallState.Running(ChrootInstaller.Step.DOWNLOAD)
+            _state.value = InstallState.Stopping(InstallState.StopTarget.CANCEL, running)
             installJob
         }
         job?.cancel(CancellationException("installation cancelled"))
     }
 
     fun retry() = synchronized(lock) {
-        if (_state.value !is InstallState.Failed || config == null || hasLiveJobLocked()) {
+        if ((_state.value !is InstallState.Failed && _state.value != InstallState.Cancelled) ||
+            config == null || hasLiveJobLocked()
+        ) {
             return@synchronized
         }
         lastRunning = null
         downloadSample = null
         _state.value = InstallState.Queued
         launchLocked()
+    }
+
+    fun acknowledgeTerminalState() = synchronized(lock) {
+        if (_state.value == InstallState.Succeeded || _state.value == InstallState.Cancelled) {
+            config = null
+            lastRunning = null
+            downloadSample = null
+            _log.value = emptyList()
+            _state.value = InstallState.Idle
+        }
     }
 
     private fun launchLocked() {
@@ -142,11 +163,24 @@ class InstallCoordinator(
                 if (_state.value is InstallState.Running) _state.value = InstallState.Succeeded
             }
         } catch (cancellation: CancellationException) {
-            synchronized(lock) {
-                if (_state.value is InstallState.Running) _state.value = InstallState.Cancelled
-            }
+            completeStopIfNeeded()
         } catch (failure: Throwable) {
             publishFailure(failure)
+        } finally {
+            completeStopIfNeeded()
+        }
+    }
+
+    private fun completeStopIfNeeded() = synchronized(lock) {
+        val stopping = _state.value as? InstallState.Stopping ?: return@synchronized
+        _state.value = when (stopping.target) {
+            InstallState.StopTarget.PAUSE -> InstallState.Paused(
+                step = stopping.running.step,
+                detail = stopping.running.detail,
+                downloadedBytes = stopping.running.downloadedBytes,
+                totalBytes = stopping.running.totalBytes,
+            )
+            InstallState.StopTarget.CANCEL -> InstallState.Cancelled
         }
     }
 

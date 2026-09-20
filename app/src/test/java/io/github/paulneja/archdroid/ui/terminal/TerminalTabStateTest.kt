@@ -24,4 +24,11 @@ class TerminalTabStateTest {
     fun `no tabs returns no active index`() {
         assertEquals(-1, TerminalTabState.afterRemoval(size = 1, activeIndex = 0, removedIndex = 0))
     }
+
+    @Test
+    fun `closing tab waits for both process exit and successful tree termination`() {
+        assertEquals(false, TerminalTabState.canFinalizeClose(exitObserved = true, terminationSucceeded = false))
+        assertEquals(false, TerminalTabState.canFinalizeClose(exitObserved = false, terminationSucceeded = true))
+        assertEquals(true, TerminalTabState.canFinalizeClose(exitObserved = true, terminationSucceeded = true))
+    }
 }

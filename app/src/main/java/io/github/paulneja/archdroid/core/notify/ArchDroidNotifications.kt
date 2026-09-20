@@ -59,6 +59,14 @@ class ArchDroidNotifications(private val context: Context) {
 
     fun cancelInstall() = NotificationManagerCompat.from(context).cancel(INSTALL_NOTIFICATION_ID)
 
+    fun postInstall(model: InstallNotificationModel) {
+        try {
+            NotificationManagerCompat.from(context).notify(INSTALL_NOTIFICATION_ID, build(model))
+        } catch (_: SecurityException) {
+            // A denied runtime permission is already explained in the wizard.
+        }
+    }
+
     fun cancelEvent() = NotificationManagerCompat.from(context).cancel(EVENT_NOTIFICATION_ID)
 
     private fun title(model: InstallNotificationModel): String = when (model.kind) {
@@ -66,6 +74,7 @@ class ArchDroidNotifications(private val context: Context) {
         InstallNotificationKind.QUEUED,
         InstallNotificationKind.RUNNING,
         -> context.getString(R.string.notification_install_title)
+        InstallNotificationKind.STOPPING -> context.getString(R.string.notification_stopping_title)
         InstallNotificationKind.PAUSED -> context.getString(R.string.notification_paused_title)
         InstallNotificationKind.SUCCEEDED -> context.getString(R.string.notification_success_title)
         InstallNotificationKind.FAILED -> context.getString(R.string.notification_failed_title)
@@ -77,6 +86,7 @@ class ArchDroidNotifications(private val context: Context) {
         InstallNotificationKind.QUEUED,
         -> context.getString(R.string.notification_preparing)
         InstallNotificationKind.RUNNING -> runningBody(model)
+        InstallNotificationKind.STOPPING -> context.getString(R.string.notification_stopping_body)
         InstallNotificationKind.PAUSED -> pausedBody(model)
         InstallNotificationKind.SUCCEEDED -> context.getString(R.string.notification_success_body)
         InstallNotificationKind.FAILED -> listOfNotNull(

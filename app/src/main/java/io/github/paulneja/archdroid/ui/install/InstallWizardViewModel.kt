@@ -112,4 +112,5 @@ class InstallWizardViewModel(app: Application) : AndroidViewModel(app) {
     fun resume() = ArchDroidService.resume(app)
     fun cancel() = ArchDroidService.cancel(app)
     fun retry() = ArchDroidService.retry(app)
+    fun acknowledgeTerminalState() = coordinator.acknowledgeTerminalState()
 }

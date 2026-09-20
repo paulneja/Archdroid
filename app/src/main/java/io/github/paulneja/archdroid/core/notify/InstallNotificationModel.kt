@@ -5,7 +5,7 @@ import io.github.paulneja.archdroid.core.service.InstallState
 
 enum class InstallNotificationAction { PAUSE, RESUME, CANCEL, RETRY, OPEN_TERMINAL }
 
-enum class InstallNotificationKind { IDLE, QUEUED, RUNNING, PAUSED, SUCCEEDED, FAILED, CANCELLED }
+enum class InstallNotificationKind { IDLE, QUEUED, RUNNING, STOPPING, PAUSED, SUCCEEDED, FAILED, CANCELLED }
 
 data class InstallNotificationModel(
     val kind: InstallNotificationKind,
@@ -19,6 +19,7 @@ data class InstallNotificationModel(
     val progressPercent: Int? = null,
     val actions: List<InstallNotificationAction> = emptyList(),
     val ongoing: Boolean = false,
+    val foreground: Boolean = false,
 ) {
     companion object {
         fun from(state: InstallState): InstallNotificationModel = when (state) {
@@ -27,6 +28,7 @@ data class InstallNotificationModel(
                 kind = InstallNotificationKind.QUEUED,
                 actions = listOf(InstallNotificationAction.PAUSE, InstallNotificationAction.CANCEL),
                 ongoing = true,
+                foreground = true,
             )
             is InstallState.Running -> InstallNotificationModel(
                 kind = InstallNotificationKind.RUNNING,
@@ -39,6 +41,21 @@ data class InstallNotificationModel(
                 progressPercent = percent(state.downloadedBytes, state.totalBytes),
                 actions = listOf(InstallNotificationAction.PAUSE, InstallNotificationAction.CANCEL),
                 ongoing = true,
+                foreground = true,
+            )
+            is InstallState.Stopping -> InstallNotificationModel(
+                kind = InstallNotificationKind.STOPPING,
+                step = state.running.step,
+                detail = state.running.detail,
+                downloadedBytes = state.running.downloadedBytes,
+                totalBytes = state.running.totalBytes,
+                progressPercent = percent(
+                    state.running.downloadedBytes,
+                    state.running.totalBytes,
+                ),
+                message = state.target.name,
+                ongoing = true,
+                foreground = true,
             )
             is InstallState.Paused -> InstallNotificationModel(
                 kind = InstallNotificationKind.PAUSED,
@@ -57,7 +74,7 @@ data class InstallNotificationModel(
             is InstallState.Failed -> InstallNotificationModel(
                 kind = InstallNotificationKind.FAILED,
                 step = state.step,
-                message = state.message,
+                message = state.message.replace(Regex("\\s+"), " ").take(160),
                 actions = listOf(InstallNotificationAction.RETRY),
             )
             InstallState.Cancelled -> InstallNotificationModel(InstallNotificationKind.CANCELLED)

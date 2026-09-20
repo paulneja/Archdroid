@@ -22,6 +22,7 @@ class InstallNotificationModelTest {
             model.actions,
         )
         assertTrue(model.ongoing)
+        assertTrue(model.foreground)
     }
 
     @Test
@@ -65,6 +66,7 @@ class InstallNotificationModelTest {
             model.actions,
         )
         assertTrue(model.ongoing)
+        assertFalse(model.foreground)
     }
 
     @Test
@@ -84,5 +86,29 @@ class InstallNotificationModelTest {
 
         assertEquals(listOf(InstallNotificationAction.OPEN_TERMINAL), model.actions)
         assertFalse(model.ongoing)
+    }
+
+    @Test
+    fun `stopping work retains foreground protection without actions`() {
+        val model = InstallNotificationModel.from(
+            InstallState.Stopping(
+                target = InstallState.StopTarget.CANCEL,
+                running = InstallState.Running(ChrootInstaller.Step.PACKAGES),
+            )
+        )
+
+        assertTrue(model.foreground)
+        assertTrue(model.actions.isEmpty())
+    }
+
+    @Test
+    fun `failure summary is single line and bounded`() {
+        val secret = "password\n" + "x".repeat(300)
+        val model = InstallNotificationModel.from(
+            InstallState.Failed(ChrootInstaller.Step.USER, secret)
+        )
+
+        assertFalse(model.message.contains('\n'))
+        assertTrue(model.message.length <= 160)
     }
 }

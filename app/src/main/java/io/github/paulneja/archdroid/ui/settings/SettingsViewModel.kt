@@ -32,6 +32,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
 
     private val repo: SettingsRepository = ServiceLocator.settings(app)
     val chroot: ChrootController = ServiceLocator.chroot(app)
+    private val installCoordinator = ServiceLocator.installCoordinator(app)
 
     val settings: StateFlow<AppSettings> = repo.settings
         .stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
@@ -144,6 +145,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
             _backupState.value = BackupState.Running("reset")
             chroot.reset().fold(
                 onSuccess = {
+                    installCoordinator.acknowledgeTerminalState()
                     _backupState.value = BackupState.Success("reset")
                     _activeMounts.value = emptyList()
                 },

@@ -3,6 +3,7 @@ package io.github.paulneja.archdroid.core.service
 import io.github.paulneja.archdroid.core.chroot.ChrootInstaller
 
 sealed interface InstallState {
+    enum class StopTarget { PAUSE, CANCEL }
     data object Idle : InstallState
     data object Queued : InstallState
 
@@ -20,6 +21,11 @@ sealed interface InstallState {
         val detail: String = "",
         val downloadedBytes: Long = 0L,
         val totalBytes: Long = -1L,
+    ) : InstallState
+
+    data class Stopping(
+        val target: StopTarget,
+        val running: Running,
     ) : InstallState
 
     data object Succeeded : InstallState

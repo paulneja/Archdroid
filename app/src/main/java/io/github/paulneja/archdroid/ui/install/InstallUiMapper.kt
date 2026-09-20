@@ -31,6 +31,17 @@ object InstallUiMapper {
             installState = installState,
             log = log,
         )
+        is InstallState.Stopping -> ui.copy(
+            page = 4,
+            running = true,
+            progress = installState.running.let {
+                ChrootInstaller.Progress(it.step, it.detail, it.downloadedBytes, it.totalBytes)
+            },
+            error = null,
+            done = false,
+            installState = installState,
+            log = log,
+        )
         is InstallState.Paused -> ui.copy(
             page = 4,
             running = false,

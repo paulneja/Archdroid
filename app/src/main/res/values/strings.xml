@@ -78,6 +78,8 @@
     <string name="notification_install_title">Installing Arch Linux</string>
     <string name="notification_preparing">Preparing installation…</string>
     <string name="notification_paused_title">Installation paused</string>
+    <string name="notification_stopping_title">Stopping installation safely</string>
+    <string name="notification_stopping_body">Waiting for the current operation to finish…</string>
     <string name="notification_paused_body">Paused at %1$s</string>
     <string name="notification_success_title">Arch Linux installed</string>
     <string name="notification_success_body">The chroot is ready to use.</string>

@@ -31,18 +31,38 @@ class SessionProcessTreeTest {
 
     @Test
     fun `rejects invalid leader pids`() {
-        assertThrows(IllegalArgumentException::class.java) { SessionProcessTree.script(0) }
-        assertThrows(IllegalArgumentException::class.java) { SessionProcessTree.script(-1) }
+        assertThrows(IllegalArgumentException::class.java) {
+            SessionProcessTree.ProcessIdentity(0, 0, 1)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            SessionProcessTree.ProcessIdentity(-1, -1, 1)
+        }
     }
 
     @Test
     fun `generated script is scoped to proc session membership`() {
-        val script = SessionProcessTree.script(101)
+        val script = SessionProcessTree.script(
+            SessionProcessTree.ProcessIdentity(pid = 101, sessionId = 101, startTimeTicks = 9_001)
+        )
 
         assertTrue(script.contains("/proc/[0-9]*/stat"))
-        assertTrue(script.contains("kill -TERM"))
-        assertTrue(script.contains("kill -KILL"))
+        assertTrue(script.contains("EXPECTED_LEADER_START=9001"))
+        assertTrue(script.contains("signal_one TERM"))
+        assertTrue(script.contains("signal_one KILL"))
         assertFalse(script.contains("pkill"))
         assertFalse(script.contains("/data/local/arch"))
+        assertFalse(script.contains("exit 0"))
     }
+
+    @Test
+    fun `process identity includes kernel start time and rejects a reused leader`() {
+        val original = SessionProcessTree.identity(stat(pid = 101, name = "su", startTime = 9_001))
+        val reused = stat(pid = 101, name = "unrelated", startTime = 9_999)
+
+        assertEquals(9_001L, original.startTimeTicks)
+        assertEquals(emptyList<Int>(), SessionProcessTree.members(original, listOf(reused)))
+    }
+
+    private fun stat(pid: Int, name: String, startTime: Long): String =
+        "$pid ($name) S 70 $pid $pid " + List(15) { "0" }.joinToString(" ") + " $startTime"
 }

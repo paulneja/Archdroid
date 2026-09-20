@@ -80,13 +80,18 @@ class ArchDroidService : Service() {
             InstallState.Idle -> stopServiceForeground()
             InstallState.Queued,
             is InstallState.Running,
-            is InstallState.Paused,
+            is InstallState.Stopping,
             -> ServiceCompat.startForeground(
                 this,
                 ArchDroidNotifications.INSTALL_NOTIFICATION_ID,
                 notifications.build(model),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
             )
+            is InstallState.Paused -> {
+                ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_DETACH)
+                notifications.postInstall(model)
+                stopSelf()
+            }
             InstallState.Succeeded -> {
                 stopServiceForeground()
                 notifications.postEvent(model)
@@ -114,6 +119,11 @@ class ArchDroidService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        coordinator.cancel()
+        stopServiceForeground()
+    }
 
     companion object {
         const val ACTION_START = "io.github.paulneja.archdroid.action.START_INSTALL"

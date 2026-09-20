@@ -41,6 +41,8 @@ class ChrootInstaller(private val context: Context) {
 
     private fun partialFile(): File = File(context.filesDir, "rootfs.tar.gz.part")
 
+    private fun checkpointFile(): File = File(context.filesDir, "install.checkpoint")
+
     suspend fun install(
         config: InstallConfig,
         onProgress: (Progress) -> Unit,
@@ -48,19 +50,52 @@ class ChrootInstaller(private val context: Context) {
     ): Result<Unit> {
         return try {
             log = onLog
-            download(config, onProgress)
-            verify(config, onProgress)
-            extract(onProgress)
-            baseConfig(config, onProgress)
-            createUser(config, onProgress)
-            installPackages(config, onProgress)
-            cleanup(onProgress)
+            val start = resumeStep(config)
+            InstallResumePlan.stepsFrom(start).forEach { step ->
+                saveCheckpoint(config, step)
+                when (step) {
+                    Step.DOWNLOAD -> download(config, onProgress)
+                    Step.VERIFY -> verify(config, onProgress)
+                    Step.EXTRACT -> extract(onProgress)
+                    Step.BASE_CONFIG -> baseConfig(config, onProgress)
+                    Step.USER -> createUser(config, onProgress)
+                    Step.PACKAGES -> installPackages(config, onProgress)
+                    Step.CLEANUP -> cleanup(onProgress)
+                }
+                InstallResumePlan.next(step)?.let { saveCheckpoint(config, it) }
+            }
+            checkpointFile().delete()
             Result.success(Unit)
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (failure: Throwable) {
+            if (failure is InstallException && failure.step == Step.VERIFY && !tarballFile().isFile) {
+                saveCheckpoint(config, Step.DOWNLOAD)
+            }
             Result.failure(failure)
         }
+    }
+
+    private fun resumeStep(config: InstallConfig): Step {
+        val lines = checkpointFile().takeIf(File::isFile)?.readLines().orEmpty()
+        val savedMirror = lines.getOrNull(0)
+        val savedStep = lines.getOrNull(1)?.let { name ->
+            Step.entries.firstOrNull { it.name == name }
+        }
+        if (savedMirror != null && savedMirror != config.mirror) {
+            tarballFile().delete()
+            partialFile().delete()
+            checkpointFile().delete()
+            return Step.DOWNLOAD
+        }
+        if (savedStep != null && savedStep != Step.DOWNLOAD && !tarballFile().isFile) {
+            return Step.DOWNLOAD
+        }
+        return savedStep ?: Step.DOWNLOAD
+    }
+
+    private fun saveCheckpoint(config: InstallConfig, step: Step) {
+        checkpointFile().writeText("${config.mirror}\n${step.name}\n")
     }
 
     private var log: (String) -> Unit = {}
@@ -229,8 +264,16 @@ class ChrootInstaller(private val context: Context) {
         if (user.isEmpty()) return
         onProgress(Progress(Step.USER, user))
         chrootBash(Step.USER, "pacman -S --needed --noconfirm sudo")
-        chrootBash(Step.USER, "useradd -m -G wheel -s /bin/bash ${quote(user)}")
-        chrootBash(Step.USER, "echo ${quote("$user:${config.password}")} | chpasswd")
+        chrootBash(
+            Step.USER,
+            "id ${quote(user)} >/dev/null 2>&1 || useradd -m -G wheel -s /bin/bash ${quote(user)}",
+            "ensure user $user exists",
+        )
+        chrootBash(
+            Step.USER,
+            "echo ${quote("$user:${config.password}")} | chpasswd",
+            "set password for $user",
+        )
         Sudoers.grantWheelCommands().forEach { chrootBash(Step.USER, it) }
 
         // The whole point of this step is a user that can actually log in, so confirm it
@@ -251,13 +294,18 @@ class ChrootInstaller(private val context: Context) {
         partialFile().delete()
     }
 
-    private suspend fun chrootBash(step: Step, command: String) {
+    private suspend fun chrootBash(step: Step, command: String, failureLabel: String = command) {
         val result = RootManager.execStreaming(
             "chroot ${ChrootPaths.CHROOT_DIR} /bin/bash -lc ${quote(command)}",
             log,
         )
         if (!result.isSuccess) {
-            throw InstallException(step, "$command -> ${result.err.joinToString()}")
+            throw InstallException(step, commandFailure(failureLabel, result.err))
         }
+    }
+
+    companion object {
+        fun commandFailure(label: String, stderr: List<String>): String =
+            "$label -> ${stderr.joinToString()}"
     }
 }

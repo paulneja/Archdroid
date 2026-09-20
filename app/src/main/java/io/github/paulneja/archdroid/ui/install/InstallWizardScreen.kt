@@ -33,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +43,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.content.ContextCompat
 import com.kyant.backdrop.Backdrop
@@ -62,6 +66,24 @@ fun InstallWizardScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    fun notificationsDeniedNow(): Boolean = NotificationPermissionStatus.denied(
+        apiLevel = Build.VERSION.SDK_INT,
+        permissionGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED,
+    )
+    DisposableEffect(lifecycleOwner, context) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.setNotificationsDenied(notificationsDeniedNow())
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        viewModel.setNotificationsDenied(notificationsDeniedNow())
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val notificationPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -116,7 +138,10 @@ fun InstallWizardScreen(
 
         when {
             ui.done -> LiquidButton(
-                onClick = onDone,
+                onClick = {
+                    viewModel.acknowledgeTerminalState()
+                    onDone()
+                },
                 backdrop = backdrop,
                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                 modifier = Modifier.fillMaxWidth(),
@@ -130,6 +155,7 @@ fun InstallWizardScreen(
                     onPrimary = viewModel::pause,
                     onCancel = viewModel::cancel,
                 )
+            ui.installState is InstallState.Stopping -> {}
             ui.installState is InstallState.Paused -> InstallActionButtons(
                 backdrop = backdrop,
                 primaryLabel = stringResource(R.string.wizard_resume),
@@ -148,11 +174,15 @@ fun InstallWizardScreen(
                 )
             }
             ui.installState == InstallState.Cancelled -> LiquidButton(
-                onClick = onDone,
+                onClick = viewModel::retry,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                 backdrop = backdrop,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(stringResource(R.string.wizard_finish), style = MaterialTheme.typography.titleSmall)
+                Text(
+                    stringResource(R.string.wizard_retry_install),
+                    style = MaterialTheme.typography.titleSmall,
+                )
             }
             else -> Row(
                 modifier = Modifier.fillMaxWidth(),

@@ -138,6 +138,7 @@ class ChrootController(
         RootManager.exec("rm -rf ${quote(ChrootPaths.CHROOT_DIR)}").also {
             if (!it.isSuccess) error("rm failed: ${it.err.joinToString()}")
         }
+        File(context.filesDir, "install.checkpoint").delete()
         refresh()
     }
 
