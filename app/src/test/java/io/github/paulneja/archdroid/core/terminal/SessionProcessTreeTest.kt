@@ -40,6 +40,14 @@ class SessionProcessTreeTest {
     }
 
     @Test
+    fun `identity read command uses the exact numeric proc path`() {
+        assertEquals("cat /proc/26827/stat", SessionProcessTree.identityReadCommand(26_827))
+        assertThrows(IllegalArgumentException::class.java) {
+            SessionProcessTree.identityReadCommand(0)
+        }
+    }
+
+    @Test
     fun `generated script is scoped to proc session membership`() {
         val script = SessionProcessTree.script(
             SessionProcessTree.ProcessIdentity(pid = 101, sessionId = 101, startTimeTicks = 9_001)

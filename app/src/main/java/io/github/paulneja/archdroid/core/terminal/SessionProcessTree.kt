@@ -1,7 +1,6 @@
 package io.github.paulneja.archdroid.core.terminal
 
 import io.github.paulneja.archdroid.core.root.RootManager
-import java.io.File
 
 object SessionProcessTree {
     data class ProcessIdentity(val pid: Int, val sessionId: Int, val startTimeTicks: Long) {
@@ -25,9 +24,15 @@ object SessionProcessTree {
         return ProcessIdentity(pid, sessionId, startTime)
     }
 
-    fun readIdentity(pid: Int): ProcessIdentity {
+    fun identityReadCommand(pid: Int): String {
         require(pid > 0) { "PID must be positive" }
-        return identity(File("/proc/$pid/stat").readText()).also {
+        return "cat /proc/$pid/stat"
+    }
+
+    suspend fun readIdentity(pid: Int): ProcessIdentity {
+        val statLine = RootManager.outputOf(identityReadCommand(pid)).singleOrNull()
+            ?: throw IllegalStateException("could not read /proc/$pid/stat as root")
+        return identity(statLine).also {
             require(it.pid == pid) { "process identity changed while it was read" }
         }
     }

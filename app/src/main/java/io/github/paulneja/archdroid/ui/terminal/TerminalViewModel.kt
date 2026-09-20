@@ -15,6 +15,7 @@ import io.github.paulneja.archdroid.core.terminal.ExtraKeysModifierState
 import io.github.paulneja.archdroid.core.terminal.SessionProcessTree
 import io.github.paulneja.archdroid.core.terminal.TerminalSessionFactory
 import io.github.paulneja.archdroid.di.ServiceLocator
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -28,7 +29,7 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     class Tab(
         val id: String = UUID.randomUUID().toString(),
         val session: TerminalSession,
-        val processIdentity: SessionProcessTree.ProcessIdentity?,
+        val processIdentity: CompletableDeferred<Result<SessionProcessTree.ProcessIdentity>>,
         val title: MutableStateFlow<String> = MutableStateFlow("shell"),
         val closing: MutableStateFlow<Boolean> = MutableStateFlow(false),
     ) {
@@ -127,11 +128,14 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
         )
         val tab = Tab(
             session = session,
-            processIdentity = runCatching { SessionProcessTree.readIdentity(session.pid) }.getOrNull(),
+            processIdentity = CompletableDeferred(),
         )
         _tabs.value = _tabs.value + tab
         _activeIndex.value = _tabs.value.lastIndex
         viewRef?.attachSession(tab.session)
+        viewModelScope.launch {
+            tab.processIdentity.complete(runCatching { SessionProcessTree.readIdentity(session.pid) })
+        }
     }
 
     fun selectTab(index: Int) {
@@ -143,16 +147,19 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     fun closeTab(index: Int) {
         val tab = _tabs.value.getOrNull(index) ?: return
         if (tab.closing.value) return
-        val identity = tab.processIdentity
-        if (identity == null) {
-            _closeError.value = "could not read the terminal process identity"
-            return
-        }
         tab.closing.value = true
         tab.closeFailed = false
         tab.terminationSucceeded = false
         _closeError.value = null
         viewModelScope.launch {
+            val identity = tab.processIdentity.await().getOrElse { failure ->
+                if (_tabs.value.any { it.id == tab.id }) {
+                    tab.closeFailed = true
+                    tab.closing.value = false
+                    _closeError.value = failure.message ?: failure.javaClass.simpleName
+                }
+                return@launch
+            }
             SessionProcessTree.terminate(identity).fold(
                 onSuccess = {
                     tab.terminationSucceeded = true
