@@ -133,6 +133,14 @@ class MountPlanTest {
     }
 
     @Test
+    fun `unmount drains stacked mounts at each path`() {
+        val commands = MountPlan.unmountCommands(MountConfig(), c)
+
+        assertTrue(commands.all { it.contains("while [ \$attempt -lt 16 ]") })
+        assertTrue(commands.all { it.contains("attempt=\$((attempt + 1))") })
+    }
+
+    @Test
     fun `residual mounts finds a mount inside the chroot`() {
         val procMounts = listOf(
             "/dev/block/dm-9 /data ext4 rw 0 0",
