@@ -135,12 +135,7 @@ object MountPlan {
         points += listOf("$c/dev/shm", "$c/dev/pts", "$c/dev", "$c/sys", "$c/proc", c)
         return points
             .sortedByDescending { it.count { ch -> ch == '/' } }
-            .map { point ->
-                val target = quote(point)
-                "attempt=0; while [ \$attempt -lt 16 ]; do " +
-                    "umount $target 2>/dev/null || umount -l $target 2>/dev/null || break; " +
-                    "attempt=\$((attempt + 1)); done"
-            }
+            .map { "umount ${quote(it)} 2>/dev/null || umount -l ${quote(it)} 2>/dev/null || true" }
     }
 
     /**
