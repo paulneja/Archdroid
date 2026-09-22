@@ -33,7 +33,6 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
         val title: MutableStateFlow<String> = MutableStateFlow("shell"),
         val closing: MutableStateFlow<Boolean> = MutableStateFlow(false),
     ) {
-        var exitObserved = false
         var terminationSucceeded = false
         var closeFailed = false
     }
@@ -163,7 +162,7 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
             SessionProcessTree.terminate(identity).fold(
                 onSuccess = {
                     tab.terminationSucceeded = true
-                    if (TerminalTabState.canFinalizeClose(tab.exitObserved, tab.terminationSucceeded)) {
+                    if (TerminalTabState.canFinalizeClose(tab.terminationSucceeded)) {
                         finalizeSession(tab.session)
                     }
                 },
@@ -182,8 +181,7 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     private fun removeSession(session: TerminalSession) {
         val tab = _tabs.value.firstOrNull { it.session == session } ?: return
         if (tab.closing.value || tab.closeFailed) {
-            tab.exitObserved = true
-            if (!TerminalTabState.canFinalizeClose(tab.exitObserved, tab.terminationSucceeded)) return
+            if (!TerminalTabState.canFinalizeClose(tab.terminationSucceeded)) return
         }
         finalizeSession(session)
     }

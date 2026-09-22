@@ -1,8 +1,7 @@
 package io.github.paulneja.archdroid.ui.terminal
 
 object TerminalTabState {
-    fun canFinalizeClose(exitObserved: Boolean, terminationSucceeded: Boolean): Boolean =
-        exitObserved && terminationSucceeded
+    fun canFinalizeClose(terminationSucceeded: Boolean): Boolean = terminationSucceeded
 
     fun afterRemoval(size: Int, activeIndex: Int, removedIndex: Int): Int {
         require(size > 0) { "size must be positive" }
