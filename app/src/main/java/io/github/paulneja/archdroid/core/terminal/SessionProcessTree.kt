@@ -63,21 +63,24 @@ object SessionProcessTree {
         return """
             LEADER=${leader.pid}
             EXPECTED_LEADER_START=${leader.startTimeTicks}
+            read_stat() {
+              stat=$d{1}
+              [ -r "$d{stat}" ] || return 1
+              IFS= read -r line < "$d{stat}" || return 1
+              STAT_PID=$d{line%% *}; rest=$d{line##*) }; set -- $d{rest}
+              STAT_SID=$d{4:-}; STAT_START=$d{20:-}
+            }
             read_member() {
               pid=$d{1}; expected_start=$d{2}; stat=/proc/$d{pid}/stat
-              [ -r "$d{stat}" ] || return 1
-              line=$d(cat "$d{stat}" 2>/dev/null) || return 1
-              current_pid=$d{line%% *}; rest=$d{line##*) }; set -- $d{rest}
-              [ "$d{current_pid}" = "$d{pid}" ] || return 1
-              [ "$d{4:-}" = "$d{LEADER}" ] || return 1
-              [ "$d{20:-}" = "$d{expected_start}" ] || return 1
+              read_stat "$d{stat}" || return 1
+              [ "$d{STAT_PID}" = "$d{pid}" ] || return 1
+              [ "$d{STAT_SID}" = "$d{LEADER}" ] || return 1
+              [ "$d{STAT_START}" = "$d{expected_start}" ] || return 1
             }
             session_members() {
               for stat in /proc/[0-9]*/stat; do
-                [ -r "$d{stat}" ] || continue
-                line=$d(cat "$d{stat}" 2>/dev/null) || continue
-                pid=$d{line%% *}; rest=$d{line##*) }; set -- $d{rest}
-                sid=$d{4:-}; start=$d{20:-}
+                read_stat "$d{stat}" || continue
+                pid=$d{STAT_PID}; sid=$d{STAT_SID}; start=$d{STAT_START}
                 [ "$d{sid}" = "$d{LEADER}" ] || continue
                 if [ "$d{pid}" = "$d{LEADER}" ] && [ "$d{start}" != "$d{EXPECTED_LEADER_START}" ]; then continue; fi
                 printf '%s:%s\n' "$d{pid}" "$d{start}"
@@ -88,25 +91,14 @@ object SessionProcessTree {
               read_member "$d{pid}" "$d{start}" || return 0
               kill -"$d{signal}" "$d{pid}" 2>/dev/null || true
             }
-            terminate_members() {
-              members=$d(session_members)
-              for member in $d{members}; do [ "$d{member%%:*}" = "$d{LEADER}" ] || signal_one TERM "$d{member}"; done
-              for member in $d{members}; do [ "$d{member%%:*}" = "$d{LEADER}" ] && signal_one TERM "$d{member}"; done
-            }
             kill_members() {
               members=$d(session_members)
               for member in $d{members}; do [ "$d{member%%:*}" = "$d{LEADER}" ] || signal_one KILL "$d{member}"; done
               for member in $d{members}; do [ "$d{member%%:*}" = "$d{LEADER}" ] && signal_one KILL "$d{member}"; done
             }
-            terminate_members
-            pass=0
-            while [ $d{pass} -lt 5 ]; do
-              [ -z "$d(session_members)" ] && break
-              sleep 0.1
-              pass=$d((pass + 1))
-            done
-            if [ -n "$d(session_members)" ]; then kill_members; sleep 0.1; fi
-            [ -z "$d(session_members)" ]
+            kill_members
+            kill_members
+            :
         """.trimIndent()
     }
 

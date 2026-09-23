@@ -198,13 +198,7 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
         _tabs.value = oldTabs.toMutableList().apply { removeAt(index) }
         if (_tabs.value.isEmpty()) {
             _activeIndex.value = -1
-            viewModelScope.launch {
-                val result = chroot.releaseSession(remainingSessions = 0)
-                if (result != null && !result.ok) {
-                    _error.value = result.log.joinToString("\n")
-                }
-                onAllSessionsClosed?.invoke()
-            }
+            onAllSessionsClosed?.invoke()
             return
         }
         _activeIndex.value = newIndex

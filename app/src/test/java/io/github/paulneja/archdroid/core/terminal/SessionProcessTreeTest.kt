@@ -55,8 +55,10 @@ class SessionProcessTreeTest {
 
         assertTrue(script.contains("/proc/[0-9]*/stat"))
         assertTrue(script.contains("EXPECTED_LEADER_START=9001"))
-        assertTrue(script.contains("signal_one TERM"))
         assertTrue(script.contains("signal_one KILL"))
+        assertFalse(script.contains("signal_one TERM"))
+        assertFalse(script.contains("cat \""))
+        assertFalse(script.contains("sleep "))
         assertFalse(script.contains("pkill"))
         assertFalse(script.contains("/data/local/arch"))
         assertFalse(script.contains("exit 0"))

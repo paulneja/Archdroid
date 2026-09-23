@@ -133,7 +133,7 @@ fun TerminalScreen(
                                 modifier = Modifier
                                     .padding(start = 6.dp)
                                     .size(14.dp)
-                                    .clickable { onClose() },
+                                    .clickable { viewModel.closeTab(index) },
                             )
                         }
                     }
