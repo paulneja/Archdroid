@@ -4,16 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
-
-/**
- * When a constructor property and a member function share a name, Kotlin resolves a bare
- * call to the *function*. `override fun onSessionFinished(s) { onSessionFinished(s) }`
- * therefore calls itself forever and the app dies with StackOverflowError the moment a
- * terminal session ends. The compiler says nothing.
- *
- * The invariant: in these clients no constructor callback may be named after a method
- * they override.
- */
 class SessionClientNamingTest {
 
     private fun source(name: String): String =

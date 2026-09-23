@@ -1,14 +1,7 @@
 package io.github.paulneja.archdroid.core.util
 
-/**
- * Android's toybox `tar` drops permissions and ownership, which would ruin an extracted
- * rootfs, so archive work goes through busybox. Every root manager ships one; we look in
- * their known locations and then on PATH, and only fall back to plain `tar` if there is
- * genuinely nothing else.
- */
+/** Uses BusyBox tar when available because toybox tar can lose rootfs ownership and modes. */
 object RootTar {
-
-    /** Shell prelude that leaves a usable tar command in $TAR. */
     val RESOLVE: String = buildString {
         appendLine("TAR=\"tar\"")
         appendLine("for bb in /data/adb/magisk/busybox /data/adb/ksu/bin/busybox \\")

@@ -42,7 +42,6 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     val altActive = MutableStateFlow(false)
     val shiftActive = MutableStateFlow(false)
 
-    // AndroidViewModel hands us the Application, not an Activity: safe to hold.
     val viewClient = ArchTerminalViewClient(app, { viewRef }, modifierState)
 
     private val _tabs = MutableStateFlow<List<Tab>>(emptyList())
@@ -60,13 +59,11 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     private val _closeError = MutableStateFlow<String?>(null)
     val closeError = _closeError.asStateFlow()
 
-    /** Essential paths missing from the rootfs; non-empty means it cannot be entered. */
     private val _broken = MutableStateFlow<List<String>>(emptyList())
     val broken = _broken.asStateFlow()
 
     var onAllSessionsClosed: (() -> Unit)? = null
 
-    // Cleared by detachView() from AndroidView's onRelease, so it never outlives the view.
     @SuppressLint("StaticFieldLeak")
     private var viewRef: TerminalView? = null
 
@@ -83,16 +80,13 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
                 _error.value = result.log.joinToString("\n")
                 return@launch
             }
-            // Check before spawning: a gutted rootfs makes the session die instantly and
-            // the screen close itself, which reads as the app refusing to open at all.
+            // Avoid spawning a session that cannot enter the rootfs.
             val missing = chroot.missingEssentials()
             _preparing.value = false
             if (missing.isNotEmpty()) {
                 _broken.value = missing
             } else {
                 createSession()
-                // Nothing raises the keyboard on its own, and a terminal with no way to
-                // type is not a terminal.
                 viewClient.showKeyboard()
             }
         }

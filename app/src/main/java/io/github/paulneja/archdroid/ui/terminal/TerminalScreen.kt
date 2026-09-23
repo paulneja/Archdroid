@@ -75,14 +75,10 @@ fun TerminalScreen(
             .fillMaxSize()
             .background(TerminalBg)
             .statusBarsPadding()
-            // Order matters: inset modifiers consume what they apply, so the keyboard
-            // inset wins while the keyboard is up and the navigation bar inset applies
-            // when it is not. Without the second one the extra-keys bar ends up under
-            // Android's back/home/recents bar and becomes untappable.
+            // IME insets must be consumed before navigation-bar insets.
             .imePadding()
             .navigationBarsPadding(),
     ) {
-        // Tab bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -148,7 +144,6 @@ fun TerminalScreen(
             }
         }
 
-        // Terminal
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -160,15 +155,13 @@ fun TerminalScreen(
                         setTextSize(13)
                         setTypeface(android.graphics.Typeface.MONOSPACE)
                         keepScreenOn = true
-                        // Without focus the view gets no input connection and the soft
-                        // keyboard never appears.
+                        // The input connection requires focus.
                         isFocusable = true
                         isFocusableInTouchMode = true
                         requestFocus()
                         viewModel.attachView(this)
                     }
                 },
-                // Without this the ViewModel outlives the view and keeps the Activity alive.
                 onRelease = { viewModel.detachView() },
                 modifier = Modifier.fillMaxSize(),
             )
@@ -239,7 +232,6 @@ fun TerminalScreen(
             }
         }
 
-        // Extra keys
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -276,8 +268,6 @@ private fun ExtraKey(
     active: Boolean = false,
     onClick: () -> Unit,
 ) {
-    // A held modifier has to be unmistakable: at a glance you need to know whether the
-    // next letter will be Ctrl+C or just a c.
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(6.dp))

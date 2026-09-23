@@ -3,12 +3,6 @@ package io.github.paulneja.archdroid.core.chroot
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-
-/**
- * Mounts left up with nobody using them are what turns a stray `rm -rf` on the chroot
- * directory into a delete that reaches the real filesystem. They come down as soon as the
- * last session ends -- unless the user asked for them directly.
- */
 class MountLifetimeTest {
 
     @Test

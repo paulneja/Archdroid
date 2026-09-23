@@ -43,14 +43,12 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         data class Success(val message: String) : BackupState
         data class Error(val message: String) : BackupState
 
-        /** Refused: something is still mounted under the chroot, deleting would escape it. */
         data class MountsBusy(val points: List<String>) : BackupState
     }
 
     private val _backupState = MutableStateFlow<BackupState>(BackupState.Idle)
     val backupState = _backupState.asStateFlow()
 
-    /** What is actually mounted under the chroot right now, straight from /proc/mounts. */
     private val _activeMounts = MutableStateFlow<List<String>>(emptyList())
     val activeMounts = _activeMounts.asStateFlow()
 

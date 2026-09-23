@@ -26,25 +26,16 @@ class PacmanConfTest {
 
     @Test
     fun `falls back to inserting under options when the line is absent`() {
-        // A rootfs that never shipped the commented line still has to end up with the
-        // option, and it has to land inside [options] -- appending would put it under a
-        // repository section where pacman ignores it.
-        // escaped for sed: \[options\]
         assertTrue(cmds.contains("""\[options\]"""))
     }
 
     @Test
     fun `turns off the free space check`() {
-        // Inside a chroot /proc/mounts carries the host's paths, so pacman cannot map
-        // /var/cache/pacman/pkg to a filesystem and refuses the transaction for lack of
-        // space on a device with hundreds of gigabytes free.
         assertTrue(cmds.contains("CheckSpace"))
     }
 
     @Test
     fun `leaves the kernel and firmware alone`() {
-        // A chroot boots nothing: linux-aarch64 is 370 MiB of kernel that can never run,
-        // and upgrading it fires mkinitcpio, which fails and takes the install with it.
         assertTrue(cmds.contains("IgnorePkg"))
         assertTrue(cmds.contains("linux-aarch64"))
         assertTrue(cmds.contains("linux-firmware"))
@@ -52,15 +43,11 @@ class PacmanConfTest {
 
     @Test
     fun `sticks to sed forms toybox understands`() {
-        // Android ships toybox sed, not GNU sed. An empty regex that reuses the previous
-        // one -- s//replacement/ -- is a GNU extension; toybox answers "no previous regex"
-        // and inserts nothing, silently leaving the option unset.
         assertFalse("s// is a GNU extension", cmds.contains("s//"))
     }
 
     @Test
     fun `every step is idempotent`() {
-        // Re-running an install must not double up lines.
         PacmanConf.androidCompatCommands("/etc/pacman.conf").forEach { cmd ->
             val guarded = cmd.contains("grep -q") || cmd.startsWith("sed -i")
             assertTrue("not safe to run twice: $cmd", guarded)

@@ -17,9 +17,6 @@ object RootManager {
 
     fun isRootGrantedSync(): Boolean = Shell.isAppGrantedRoot() == true
 
-    // Shell.cmd(...).exec() collects stdout only and throws stderr away, which leaves
-    // every root failure reporting an empty reason. Both entry points capture stderr so
-    // the message reaches the user.
     suspend fun exec(vararg commands: String): Shell.Result = withContext(Dispatchers.IO) {
         Shell.cmd(*commands).to(ArrayList(), ArrayList()).exec()
     }
@@ -28,10 +25,6 @@ object RootManager {
         Shell.cmd(script).to(ArrayList(), ArrayList()).exec()
     }
 
-    /**
-     * Runs a script and reports every stdout/stderr line as it arrives, so long operations
-     * like `pacman -Syu` show progress instead of hanging silently for minutes.
-     */
     suspend fun execStreaming(
         script: String,
         onLine: (String) -> Unit,

@@ -41,7 +41,6 @@ fun MountsScreen(
     LaunchedEffect(Unit) { viewModel.refreshMounts() }
 
     SettingsSubScreen(backdrop, stringResource(R.string.settings_mounts), onBack) {
-        // What the kernel reports, not what the toggles above claim.
         GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text(

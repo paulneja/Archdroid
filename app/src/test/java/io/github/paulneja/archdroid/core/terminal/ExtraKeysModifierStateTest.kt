@@ -35,9 +35,6 @@ class ExtraKeysModifierStateTest {
 
     @Test
     fun `a keypress releases every held modifier`() {
-        // One-shot, like a physical keyboard: Ctrl then C sends Ctrl+C, and the C after
-        // that is a plain C. Without this the modifier stays latched forever and every
-        // following letter is mangled.
         state.toggleCtrl()
         state.toggleAlt()
         state.toggleShift()

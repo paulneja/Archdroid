@@ -9,11 +9,7 @@ object MountManager {
 
     data class MountResult(val ok: Boolean, val log: List<String>)
 
-    /**
-     * Runs the mount plan and then asks the kernel what actually came up. The shell only
-     * reports the exit code of its last command, so success is decided by /proc/mounts,
-     * never by that code.
-     */
+    /** Verifies the result through /proc/mounts instead of the last shell exit code. */
     suspend fun ensureMounted(cfg: MountConfig): MountResult {
         val result = RootManager.exec(*MountPlan.mountCommands(cfg, C).toTypedArray())
         val missing = MountPlan.missingMounts(RootManager.outputOf("cat /proc/mounts"), cfg, C)
@@ -23,11 +19,7 @@ object MountManager {
         )
     }
 
-    /**
-     * Unmounts everything this config can mount and then re-reads /proc/mounts: the result
-     * is only ok when nothing is left below the chroot, since callers use that to decide
-     * whether deleting the rootfs is safe.
-     */
+    /** Reports failure while any mount remains below the chroot. */
     suspend fun unmountAll(cfg: MountConfig): MountResult {
         val result = RootManager.exec(*MountPlan.unmountCommands(cfg, C).toTypedArray())
         val residual = residualMounts()
@@ -43,6 +35,6 @@ object MountManager {
     suspend fun activeMounts(): List<String> =
         MountPlan.residualMounts(RootManager.outputOf("cat /proc/mounts"), C)
 
-    /** Mount points still live at or below the chroot — must be empty before an rm -rf. */
+    /** Must be empty before deleting the rootfs. */
     suspend fun residualMounts(): List<String> = activeMounts()
 }

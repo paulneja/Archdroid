@@ -4,19 +4,12 @@ import io.github.paulneja.archdroid.core.util.ShellQuote
 import io.github.paulneja.archdroid.core.util.ShellQuote.quote
 import io.github.paulneja.archdroid.data.model.AppSettings
 
-/**
- * Builds the script the terminal executes as root: it sets up the session environment,
- * runs the user's startup hook inside the chroot, and hands the pty over to the shell.
- */
 object EnterScript {
 
     fun build(cfg: AppSettings): String = buildString {
         val c = ChrootPaths.CHROOT_DIR
         appendLine("#!/system/bin/sh")
-        // The mounts the app makes through libsu live in that shell's mount namespace,
-        // and the terminal is a separate su process that may not share it -- the chroot
-        // still enters, but without the suid bind sudo cannot elevate. Mounting from here
-        // puts them in the same namespace as the session that is about to use them.
+        // Mount in the terminal process namespace so sudo keeps its suid bind.
         MountPlan.mountCommands(cfg.mounts, c).forEach { appendLine(it) }
         appendLine("export TERM=xterm-256color")
         appendLine("export COLORTERM=truecolor")

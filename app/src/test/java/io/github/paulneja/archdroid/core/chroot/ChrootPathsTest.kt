@@ -6,13 +6,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ChrootPathsTest {
-
-    /**
-     * os.archlinuxarm.org serves the rootfs but its certificate only covers
-     * archlinuxarm.org and www.archlinuxarm.org, so an https default fails hostname
-     * verification on every device. Upstream documents the plain-http host, and the
-     * download is checked against the published md5 afterwards.
-     */
     @Test
     fun `the default mirror is not the host with the mismatched certificate over https`() {
         assertFalse(

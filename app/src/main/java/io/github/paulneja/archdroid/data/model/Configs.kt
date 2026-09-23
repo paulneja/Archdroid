@@ -2,16 +2,9 @@ package io.github.paulneja.archdroid.data.model
 
 import android.annotation.SuppressLint
 
-// These are bind-mount paths handed to a root shell, not app-sandbox file access, so the
-// literal /sdcard is exactly what is wanted here.
 /**
- * How /dev is provided inside the chroot.
- *
- * [BIND] exposes Android's own /dev, which is what every device needs but also gives
- * anything inside the chroot directory a path out to the real device nodes: deleting the
- * chroot folder by hand follows that bind and takes the phone's /dev with it.
- * [PRIVATE] mounts a fresh tmpfs and fills it with the handful of nodes a shell actually
- * uses, so no such path exists.
+ * BIND exposes Android device nodes. PRIVATE uses an isolated tmpfs, which is safer if the
+ * chroot directory is removed incorrectly.
  */
 enum class DevMode { PRIVATE, BIND }
 

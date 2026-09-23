@@ -11,10 +11,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
-/**
- * Both singletons are built from the application context, which outlives the process-wide
- * reference held here, so the static field lint check does not apply.
- */
 @SuppressLint("StaticFieldLeak")
 object ServiceLocator {
 

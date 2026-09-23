@@ -23,7 +23,6 @@ class ChrootController(
         "chroot still has active mounts: " + points.joinToString(", ")
     )
 
-    /** True when the mount was asked for directly, not brought up for a session. */
     @Volatile
     private var pinnedByUser = false
 
@@ -41,9 +40,6 @@ class ChrootController(
     suspend fun isInstalled(): Boolean =
         RootManager.test("test -f ${ChrootPaths.MARKER_FILE}")
 
-    /**
-     * Paths a login shell needs that are not there. Empty means the rootfs can be entered.
-     */
     suspend fun missingEssentials(): List<String> {
         val cfg = settings.current()
         val required = ChrootHealth.requiredPaths(ChrootPaths.CHROOT_DIR, cfg.user.loginAsRoot)
@@ -74,10 +70,6 @@ class ChrootController(
         return result
     }
 
-    /**
-     * Called when a terminal session ends. Brings the mounts down once nothing is using
-     * them, so the chroot directory stops being a path into the real filesystem.
-     */
     suspend fun releaseSession(remainingSessions: Int): MountManager.MountResult? {
         if (!MountLifetime.shouldUnmount(pinnedByUser, remainingSessions)) return null
         return stop()
@@ -142,7 +134,6 @@ class ChrootController(
         refresh()
     }
 
-    /** Wipes the rootfs contents but keeps the directory, for a restore on top. */
     private suspend fun clearRootfs() {
         ensureUnmounted()
         val c = quote(ChrootPaths.CHROOT_DIR)
@@ -156,11 +147,7 @@ class ChrootController(
         )
     }
 
-    /**
-     * Unmounts and refuses to continue while anything is still mounted under the chroot.
-     * Deleting through a live bind mount would destroy the directory it points at — the
-     * shared-storage bind makes that the user's real /sdcard.
-     */
+    /** Refuses deletion while a bind mount could expose files outside the rootfs. */
     private suspend fun ensureUnmounted() {
         val cfg = settings.current()
         MountManager.unmountAll(cfg.mounts)

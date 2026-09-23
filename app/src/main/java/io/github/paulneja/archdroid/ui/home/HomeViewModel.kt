@@ -27,8 +27,6 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val _busy = MutableStateFlow(false)
     val busy = _busy.asStateFlow()
 
-    /** Set when a mount or unmount did not do what was asked, so the UI can say so. */
-    /** Live mount points under the chroot, straight from /proc/mounts. */
     private val _activeMounts = MutableStateFlow<List<String>>(emptyList())
     val activeMounts = _activeMounts.asStateFlow()
 

@@ -14,11 +14,10 @@ android {
         versionCode = 1
         versionName = "0.1.0"
 
-        // aarch64 only, as designed; also keeps the ABI set in sync with what we build.
         ndk { abiFilters += "arm64-v8a" }
     }
 
-    // Own build of the Termux pty JNI, 16 KB page aligned (the published .so is not).
+    // The published Termux JNI library is not aligned for 16 KB pages.
     ndkVersion = "28.2.13676358"
 
     externalNativeBuild {
@@ -56,15 +55,13 @@ android {
     }
 
     lint {
-        // arm64-v8a only is the design, not an oversight: the payload this app installs
-        // is an Arch Linux ARM aarch64 rootfs, so ChromeOS x86_64 can never apply.
+        // The installed rootfs is aarch64-only.
         disable += "ChromeOsAbiSupport"
     }
 
     packaging {
         jniLibs.useLegacyPackaging = true
-        // Our libtermux.so and the one inside the terminal-emulator .aar collide; the
-        // locally built one comes first in the merge order and is the one we want.
+        // Prefer the locally built 16 KB-aligned libtermux.so.
         jniLibs.pickFirsts += "**/libtermux.so"
     }
 }

@@ -98,10 +98,6 @@ fun LiquidButton(
     )
 }
 
-/**
- * Glass counterpart of the M3 Switch: the track is drawn through the backdrop so the
- * wallpaper shows through it, the thumb is a small lens that slides across.
- */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LiquidToggle(

@@ -10,8 +10,6 @@ class SudoersTest {
 
     @Test
     fun `does not depend on the exact wording of the stock sudoers file`() {
-        // A sed against a line that shifted by one character silently does nothing and
-        // leaves the user with no sudo at all, with the install still reporting success.
         assertFalse(cmds.joinToString("\n").contains("sed"))
     }
 

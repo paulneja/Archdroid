@@ -1,15 +1,10 @@
 package io.github.paulneja.archdroid.ui.install
 
-/**
- * Pure decisions the install wizard makes, kept out of the ViewModel so they can be
- * tested without an Android runtime.
- */
 object InstallPlan {
 
     const val MIN_FREE_BYTES = 2_500_000_000L
     const val MIN_PASSWORD_LENGTH = 4
 
-    /** Same shape useradd accepts: lowercase start, no shell metacharacters, 32 chars max. */
     private val USERNAME = Regex("[a-z_][a-z0-9_-]{0,31}")
 
     val AVAILABLE_PACKAGES = listOf(
@@ -19,7 +14,6 @@ object InstallPlan {
 
     fun usernameValid(username: String): Boolean = USERNAME.matches(username)
 
-    /** sudo is not optional — the wheel setup written during install depends on it. */
     fun packagesFor(selected: Set<String>, loginAsRoot: Boolean): List<String> =
         (selected + "sudo").distinct()
 

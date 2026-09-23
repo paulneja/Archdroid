@@ -52,8 +52,6 @@ class DevModeTest {
 
     @Test
     fun `private dev carries the file descriptor links scripts expect`() {
-        // mkinitcpio tests for /dev/fd to decide whether /dev is mounted at all, and
-        // shell redirections lean on /dev/stdin and friends. A bare tmpfs has none.
         val joined = cmds(DevMode.PRIVATE).joinToString("\n")
         assertTrue(joined.contains("ln -sf /proc/self/fd $c/dev/fd"))
         assertTrue(joined.contains("ln -sf /proc/self/fd/0 $c/dev/stdin"))
@@ -77,7 +75,6 @@ class DevModeTest {
     fun `both modes create the dev subdirectories after mounting over dev`() {
         for (mode in DevMode.entries) {
             val list = cmds(mode)
-            // endsWith, so the shm mount further down does not match as well
             val over = list.indexOfLast { it.endsWith("$c/dev") }
             val mkdirShm = list.indexOfLast { it.contains("mkdir") && it.contains("$c/dev/shm") }
             assertTrue("$mode: nothing mounted over dev", over >= 0)

@@ -11,9 +11,6 @@ import com.termux.view.TerminalView
 class ArchTerminalSessionClient(
     context: Context,
     private val viewProvider: () -> TerminalView?,
-    // Deliberately not named after the methods below: a constructor property sharing a
-    // name with a member function loses to it at the call site, and the override ends up
-    // calling itself.
     private val notifyFinished: (TerminalSession) -> Unit,
     private val notifyTitleChanged: (TerminalSession) -> Unit,
 ) : TerminalSessionClient {

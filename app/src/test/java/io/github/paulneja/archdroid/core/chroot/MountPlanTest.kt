@@ -44,8 +44,6 @@ class MountPlanTest {
 
     @Test
     fun `creates the dev subdirectories after binding dev over them`() {
-        // mkdir before the bind is useless: the bind hides whatever was created, and the
-        // devpts/shm mount points then resolve inside Android's own /dev.
         val cmds = MountPlan.mountCommands(MountConfig(devMode = DevMode.BIND), c)
         val bind = cmds.indexOfFirst { it.contains("mount --bind /dev") }
         val mkdirPts = cmds.indexOfLast { it.contains("mkdir") && it.contains("$c/dev/pts") }
@@ -108,9 +106,6 @@ class MountPlanTest {
 
     @Test
     fun `binds the chroot onto itself before anything else`() {
-        // /data is nosuid, which leaves sudo unable to elevate. A self-bind gives the
-        // chroot its own mount that can carry suid, and it must be first because it lands
-        // on top of the directory and would hide mounts made before it.
         val cmds = MountPlan.mountCommands(MountConfig(), c)
         assertTrue(cmds[0].contains("mount --bind $c $c"))
         assertTrue(cmds[1].contains("remount,suid,exec,dev $c"))

@@ -9,9 +9,6 @@ class EtcConfigTest {
 
     @Test
     fun `resolv conf is removed before being written`() {
-        // The Arch rootfs ships /etc/resolv.conf as a symlink to a systemd runtime path.
-        // There is no systemd in a chroot, so it dangles, and a redirect follows it and
-        // fails trying to create the target instead of replacing the link.
         val cmds = EtcConfig.resolvConfCommands(c, "8.8.8.8", "1.1.1.1")
         val remove = cmds.indexOfFirst { it.startsWith("rm -f") }
         val write = cmds.indexOfFirst { it.contains("printf") }
@@ -34,8 +31,6 @@ class EtcConfigTest {
 
     @Test
     fun `mtab points at the live kernel mount table`() {
-        // Plenty of tools read /etc/mtab rather than /proc/mounts; the stock rootfs leaves
-        // it pointing nowhere useful once systemd is out of the picture.
         val joined = EtcConfig.mtabCommands(c).joinToString("\n")
         assertTrue(joined.contains("/proc/self/mounts"))
         assertTrue(joined.contains("$c/etc/mtab"))

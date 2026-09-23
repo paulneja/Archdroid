@@ -100,10 +100,6 @@ class ChrootInstaller(private val context: Context) {
 
     private var log: (String) -> Unit = {}
 
-    /**
-     * Downloads the rootfs (~790 MiB) resuming a previous attempt when the server honours
-     * a range request, so a dropped connection does not restart the whole transfer.
-     */
     private suspend fun download(config: InstallConfig, onProgress: (Progress) -> Unit) =
         withContext(Dispatchers.IO) {
             val url = ChrootPaths.rootfsUrl(config.mirror)
@@ -142,7 +138,7 @@ class ChrootInstaller(private val context: Context) {
             val body = response.body
                 ?: throw InstallException(Step.DOWNLOAD, "empty body from $url")
 
-            // 206 means the server resumed; anything else restarts from zero.
+            // HTTP 206 confirms that the server accepted the range request.
             val resumed = response.code == 206 && already > 0
             val base = if (resumed) already else 0L
             if (!resumed && already > 0) partial.delete()
@@ -201,7 +197,6 @@ class ChrootInstaller(private val context: Context) {
             val actual = digest.digest().joinToString("") { "%02x".format(it) }
 
             if (expected != null && !expected.equals(actual, ignoreCase = true)) {
-                // A corrupt archive must not survive into the next attempt.
                 file.delete()
                 partialFile().delete()
                 throw InstallException(Step.VERIFY, "md5 mismatch: expected $expected got $actual")
@@ -235,9 +230,7 @@ class ChrootInstaller(private val context: Context) {
             if (!it.isSuccess) throw InstallException(Step.BASE_CONFIG, it.err.joinToString())
         }
 
-        // pacman 7 sandboxes downloads with Landlock, which no Android kernel ships, and
-        // aborts before fetching anything. The fix belongs in the config so the user's own
-        // pacman calls in the terminal work too.
+        // Android kernels do not provide pacman's Landlock sandbox.
         onProgress(Progress(Step.BASE_CONFIG, "pacman.conf"))
         RootManager.exec(
             *PacmanConf.androidCompatCommands("${ChrootPaths.CHROOT_DIR}/etc/pacman.conf")
@@ -276,8 +269,6 @@ class ChrootInstaller(private val context: Context) {
         )
         Sudoers.grantWheelCommands().forEach { chrootBash(Step.USER, it) }
 
-        // The whole point of this step is a user that can actually log in, so confirm it
-        // exists rather than trust four commands that each reported success on their own.
         chrootBash(Step.USER, "id ${quote(user)} >/dev/null")
     }
 

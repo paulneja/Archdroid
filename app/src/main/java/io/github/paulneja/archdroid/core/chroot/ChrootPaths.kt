@@ -6,10 +6,7 @@ object ChrootPaths {
     const val MARKER_FILE = "$CHROOT_DIR/etc/arch-release"
     const val RESOLV_CONF = "$CHROOT_DIR/etc/resolv.conf"
 
-    // Plain http on purpose: os.archlinuxarm.org serves the rootfs but presents a
-    // certificate for archlinuxarm.org only, so https fails hostname verification on
-    // every device. This host geo-redirects to the nearest mirror, and the download is
-    // checked against the published md5 once it lands.
+    // This host has no matching TLS certificate; the archive is verified with its MD5.
     const val DEFAULT_MIRROR = "http://os.archlinuxarm.org"
     const val ROOTFS_PATH = "/os/ArchLinuxARM-aarch64-latest.tar.gz"
 

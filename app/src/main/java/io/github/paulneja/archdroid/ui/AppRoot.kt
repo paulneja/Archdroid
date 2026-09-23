@@ -60,16 +60,11 @@ fun AppRoot(
 
     ArchDroidTheme(dynamicColor = settings.dynamicColor) {
         val background = Brush.verticalGradient(listOf(BgDeepTop, BgDeepBottom))
-        // Holds the background and nothing else. Glass that lives *inside* the content
-        // samples this one, because a layer must never contain anything that draws the
-        // same layer: that makes the RenderNode tree cyclic and the render thread
-        // overflows its stack on the first frame.
+        // Keep glass outside its sampled layer to avoid a RenderNode cycle.
         val backgroundBackdrop = rememberLayerBackdrop { drawRect(background) }
         val rootState by viewModel.rootState.collectAsStateWithLifecycle()
 
         Box(Modifier.fillMaxSize().background(background)) {
-            // The layer source. Deliberately empty: it records the gradient above, and
-            // must stay free of any glass.
             Box(Modifier.fillMaxSize().layerBackdrop(backgroundBackdrop))
 
             when (rootState) {
@@ -91,8 +86,7 @@ private fun MainScaffold(
     requestedRoute: String?,
     onRouteConsumed: () -> Unit,
 ) {
-    // Captures the scrolling content so the floating bar refracts whatever passes under
-    // it. Safe only because the bar is a sibling of the NavHost, never one of its children.
+    // The bar must remain a sibling of the layer it samples.
     val contentBackdrop = rememberLayerBackdrop { drawContent() }
     val navController = rememberNavController()
     val status by viewModel.chroot.status.collectAsStateWithLifecycle()
