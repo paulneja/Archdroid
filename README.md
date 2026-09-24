@@ -84,13 +84,12 @@ to the main screen without changing the current mount state.
 ## Continuous builds and releases
 
 Every push and pull request runs the unit tests and lint checks, then builds debug and
-unsigned release APKs. Both files are available from the workflow run artifacts for 14
-days.
+signed release APKs. Both files are available from the workflow run artifacts for 14 days.
 
-Tags starting with `v` also publish a GitHub Release with generated notes and the unsigned
+Tags starting with `v` also publish a GitHub Release with generated notes and the signed
 release APK attached:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
