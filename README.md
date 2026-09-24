@@ -80,3 +80,17 @@ to the main screen without changing the current mount state.
 - [Background work and notifications](docs/specs/background-work-design.md)
 - [Install notifications and terminal close](docs/specs/install-notifications-and-terminal-close.md)
 - [Implementation record](docs/plans/install-notifications-and-terminal-close.md)
+
+## Continuous builds and releases
+
+Every push and pull request runs the unit tests and lint checks, then builds debug and
+unsigned release APKs. Both files are available from the workflow run artifacts for 14
+days.
+
+Tags starting with `v` also publish a GitHub Release with generated notes and the unsigned
+release APK attached:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
