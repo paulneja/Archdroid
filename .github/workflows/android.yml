@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ARCHDROID_KEYSTORE_BASE64: ${{ secrets.ARCHDROID_KEYSTORE_BASE64 }}
-      ARCHDROID_KEYSTORE_FILE: ${{ runner.temp }}/archdroid-release.jks
+      ARCHDROID_KEYSTORE_FILE: /tmp/archdroid-release.jks
       ARCHDROID_KEYSTORE_PASSWORD: ${{ secrets.ARCHDROID_KEYSTORE_PASSWORD }}
       ARCHDROID_KEY_ALIAS: ${{ secrets.ARCHDROID_KEY_ALIAS }}
       ARCHDROID_KEY_PASSWORD: ${{ secrets.ARCHDROID_KEY_PASSWORD }}
