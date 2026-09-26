@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ArchDroid</string>
-    <string name="wip">Work in progress…</string>
 
     <string name="nav_home">Home</string>
     <string name="nav_terminal">Terminal</string>
@@ -9,7 +8,7 @@
 
     <string name="checking_root">Checking root access…</string>
     <string name="root_required_title">Root access required</string>
-    <string name="root_required_body">ArchDroid needs root to mount and enter the Arch Linux chroot. Grant access via Magisk, KernelSU or APatch and try again.</string>
+    <string name="root_required_body">Grant root to ArchDroid in Magisk, KernelSU or APatch.</string>
     <string name="retry">Retry</string>
 
     <string name="home_subtitle">Arch Linux ARM in a real chroot</string>
@@ -23,7 +22,7 @@
     <string name="disk_label">Disk usage</string>
 
     <string name="not_installed_title">Arch Linux is not installed yet</string>
-    <string name="not_installed_body">The installer will download the official Arch Linux ARM rootfs (~800 MB), extract it to /data/local/arch and set everything up.</string>
+    <string name="not_installed_body">Arch Linux ARM rootfs (~800 MB) into /data/local/arch.</string>
     <string name="install_arch">Install Arch Linux</string>
     <string name="open_terminal">Open terminal</string>
     <string name="mount_chroot">Mount chroot</string>
@@ -37,18 +36,18 @@
 
     <string name="wizard_title">Install Arch Linux</string>
     <string name="wizard_step">Step %1$d of %2$d</string>
-    <string name="wizard_welcome_body">This wizard downloads the official Arch Linux ARM rootfs (~800 MB), extracts it to /data/local/arch and prepares a ready-to-use chroot.</string>
+    <string name="wizard_welcome_body">Downloads the Arch Linux ARM rootfs (~800 MB) into /data/local/arch.</string>
     <string name="wizard_req_root">Root access granted</string>
     <string name="wizard_req_space">Free space on /data: %1$s (2.5 GB required)</string>
     <string name="wizard_req_kernel">Kernel: %1$s</string>
     <string name="wizard_req_network">Wi-Fi connection recommended</string>
     <string name="wizard_next">Next</string>
     <string name="wizard_back">Back</string>
-    <string name="wizard_mirror_body">Choose how to download the rootfs. Both options require and verify the official Arch Linux ARM signature.</string>
+    <string name="wizard_mirror_body">Both verify the official OpenPGP signature.</string>
     <string name="wizard_download_fast">Fast — HTTP</string>
-    <string name="wizard_download_fast_body">Uses the closest official mirror. Authenticity is protected by the pinned OpenPGP signature.</string>
+    <string name="wizard_download_fast_body">Closest HTTP mirror.</string>
     <string name="wizard_download_secure">Secure transport — HTTPS</string>
-    <string name="wizard_download_secure_body">Uses a direct official TLS mirror. It may be slower and still verifies the same signature.</string>
+    <string name="wizard_download_secure_body">Direct TLS mirror. Slower.</string>
     <string name="wizard_packages_body">Extra packages installed with pacman right after the base system.</string>
     <string name="wizard_username">Username</string>
     <string name="wizard_password">Password</string>
@@ -64,7 +63,7 @@
     <string name="step_cleanup">Cleaning up</string>
     <string name="downloaded_progress">%1$s / %2$s</string>
     <string name="wizard_done_title">Arch Linux installed</string>
-    <string name="wizard_done_body">Your chroot at /data/local/arch is ready. Open the terminal to start using it.</string>
+    <string name="wizard_done_body">Rootfs ready at /data/local/arch.</string>
     <string name="wizard_failed_title">Installation failed</string>
     <string name="wizard_finish">Finish</string>
     <string name="wizard_pause">Pause</string>
@@ -72,7 +71,7 @@
     <string name="wizard_cancel_install">Cancel installation</string>
     <string name="wizard_retry_install">Retry installation</string>
     <string name="wizard_cancelled">Installation cancelled. The partial download was kept.</string>
-    <string name="wizard_notifications_denied">Notifications are disabled. Installation continues, but progress and actions will only be visible while ArchDroid is open.</string>
+    <string name="wizard_notifications_denied">Notifications disabled: progress only visible with the app open.</string>
 
     <string name="notification_channel_install">Installation</string>
     <string name="notification_channel_install_description">Ongoing Arch Linux installation progress</string>
@@ -125,12 +124,12 @@
     <string name="user_change_password">Change password</string>
 
     <string name="behavior_autostart">Mount chroot on boot</string>
-    <string name="behavior_autostart_hint">Requires your root solution to grant ArchDroid superuser automatically at boot.</string>
+    <string name="behavior_autostart_hint">Needs root granted at boot.</string>
     <string name="behavior_scripts_title">Custom scripts</string>
     <string name="behavior_startup_script">Startup script (runs inside chroot)</string>
     <string name="behavior_shutdown_script">Shutdown script</string>
 
-    <string name="backup_body">Export the whole rootfs as a .tar.gz you can restore later or move to another device. Backups can be large.</string>
+    <string name="backup_body">Whole rootfs as .tar.gz.</string>
     <string name="backup_export">Export backup</string>
     <string name="backup_import">Restore from backup</string>
     <string name="backup_done">Done</string>
@@ -140,25 +139,109 @@
     <string name="reset_button">Delete everything</string>
     <string name="cancel">Cancel</string>
 
-    <string name="about_body">Arch Linux ARM (aarch64) running in a real chroot at %1$s. The chroot survives app uninstalls; only \"Reset chroot\" removes it.</string>
+    <string name="about_body">Arch Linux ARM (aarch64) chroot at %1$s. Survives uninstalling the app.</string>
     <string name="about_limits_title">Known limitations</string>
-    <string name="about_limits_body">No systemd inside a chroot (use plain scripts for services). Kernels older than 4.14 may break newer glibc calls. Kernels built without CONFIG_SYSVIPC cannot run databases like PostgreSQL.</string>
+    <string name="about_limits_body">systemd runs through a compatibility layer unless the kernel has CONFIG_PID_NS and CONFIG_FHANDLE. No GPU acceleration: desktops use llvmpipe.</string>
     <string name="about_credits_title">Credits</string>
     <string name="reset_confirm_final_title">Last chance</string>
-    <string name="reset_confirm_final_body">The whole rootfs at /data/local/arch is about to be deleted. Installed packages, your home directory and anything you saved inside Arch are gone for good.</string>
+    <string name="reset_confirm_final_body">Deletes /data/local/arch and everything in it.</string>
     <string name="reset_confirm_final_button">Delete everything</string>
     <string name="mounts_busy_title">Mounts still active</string>
-    <string name="mounts_busy_body">Nothing was deleted. These mount points are still live under the chroot — a delete would reach through them into the real filesystem. Unmount from Home and try again.</string>
+    <string name="mounts_busy_body">Mount points still active. Unmount from Home first.</string>
     <string name="mounts_active_title">Active right now</string>
     <string name="mounts_active_empty">Nothing mounted</string>
     <string name="mounts_refresh">Refresh</string>
     <string name="mount_failed">Mount failed</string>
     <string name="terminal_broken_title">The chroot is incomplete</string>
-    <string name="terminal_broken_body">These files are missing, so there is nothing to log into. Reinstall Arch from the wizard.</string>
+    <string name="terminal_broken_body">Missing files. Reinstall from the wizard.</string>
     <string name="mounts_live_title">Chroot mounted</string>
-    <string name="mounts_live_body">While these are mounted, do not delete %1$s by hand. A delete would follow them out of the chroot and into the real filesystem they point at.</string>
+    <string name="mounts_live_body">Don\'t delete %1$s by hand while mounted.</string>
     <string name="mounts_dev_mode_title">How /dev is provided</string>
     <string name="mounts_dev_use_android">Use Android\'s /dev</string>
-    <string name="mounts_dev_private_hint">A private /dev is mounted with only the nodes a shell needs (null, zero, random, urandom, tty, ptmx). Nothing inside the chroot folder leads to the phone\'s real device nodes.</string>
-    <string name="mounts_dev_bind_hint">Android\'s /dev is bind-mounted in. Maximum compatibility, but while it is mounted a delete of the chroot folder reaches the phone\'s real device nodes and can bring the system down.</string>
+    <string name="mounts_dev_private_hint">tmpfs with null, zero, full, random, urandom, tty, ptmx.</string>
+    <string name="mounts_dev_bind_hint">Bind of Android\'s /dev.</string>
+    <string name="notification_state_lost_title">Installation needs to be restarted</string>
+    <string name="notification_state_lost_body">Killed while paused. Open the installer to continue.</string>
+    <string name="apply">Apply</string>
+    <string name="backup_import_confirm_title">Restore this backup?</string>
+    <string name="backup_import_confirm_body">Replaces the current rootfs.</string>
+    <string name="backup_import_confirm_button">Restore</string>
+    <string name="user_invalid_name">Invalid user name: %1$s</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="nav_desktop">Desktop</string>
+    <string name="desktop_none_installed">No desktop installed</string>
+    <string name="settings_language">Language</string>
+    <string name="language_system">System default</string>
+    <plurals name="session_count">
+        <item quantity="one">%d terminal</item>
+        <item quantity="other">%d terminals</item>
+    </plurals>
+    <plurals name="session_protected_count">
+        <item quantity="one">%d protected</item>
+        <item quantity="other">%d protected</item>
+    </plurals>
+    <string name="notification_channel_sessions">Running sessions</string>
+    <string name="notification_channel_sessions_description">Terminal and desktop sessions</string>
+    <string name="session_notification_title">ArchDroid is running</string>
+    <string name="session_desktop_running">desktop active</string>
+    <string name="session_wakelock_held">wake lock held</string>
+    <string name="session_action_exit">Exit</string>
+    <string name="session_action_acquire_wakelock">Acquire wake lock</string>
+    <string name="session_action_release_wakelock">Release wake lock</string>
+    <string name="behavior_terminal_survival">Terminal survival</string>
+    <string name="behavior_terminal_survival_hint">Persistent notification while terminals are open.</string>
+    <string name="terminal_protect">Protect</string>
+    <string name="terminal_unprotect">Remove protection</string>
+    <string name="terminal_protected_close_title">Close a protected terminal?</string>
+    <string name="terminal_protected_close_body">Everything running in it will be killed.</string>
+    <string name="terminal_close_anyway">Close anyway</string>
+    <string name="terminal_protected">Protected</string>
+    <string name="settings_protection">Battery &amp; protection</string>
+    <string name="protection_permissions_title">Background permissions</string>
+    <string name="protection_notifications">Notifications allowed</string>
+    <string name="protection_battery">Battery optimization off</string>
+    <string name="protection_background">Background activity allowed</string>
+    <string name="protection_doze">Exempt from Doze</string>
+    <string name="protection_grant_all">Grant all permissions</string>
+    <string name="protection_battery_manual">System battery prompt</string>
+    <string name="protection_oom">OOM protection</string>
+    <string name="protection_oom_current">Current oom_score_adj: %1$d</string>
+    <string name="protection_extended">Extended protection</string>
+    <string name="protection_extended_hint">Lifts the 32 child process limit (Android 12+).</string>
+    <string name="protection_extended_on">Unlimited</string>
+    <string name="protection_extended_off">Default (32)</string>
+    <string name="protection_extended_enable">Enable</string>
+    <string name="protection_extended_disable">Restore default</string>
+    <string name="settings_init">Init</string>
+    <string name="init_compat">Compatibility layer</string>
+    <string name="init_compat_body">systemctl, journalctl, D-Bus. Network, firewall and clock units masked.</string>
+    <string name="init_systemd">systemd (PID 1)</string>
+    <string name="init_systemd_body">Own PID namespace. Experimental.</string>
+    <string name="init_systemd_unsupported">Not supported by this kernel.</string>
+    <string name="init_applies_next_start">Applies on the next chroot start.</string>
+    <string name="init_kernel_title">Kernel</string>
+    <string name="init_probing">Checking the kernel…</string>
+    <string name="init_required">needed</string>
+    <string name="init_no_config">No /proc/config.gz</string>
+    <string name="desktop_connecting">Connecting to the desktop…</string>
+    <string name="desktop_keyboard">Keyboard</string>
+    <string name="desktop_touch_mode">Touchpad / touch</string>
+    <string name="desktop_running">Session running</string>
+    <string name="desktop_open">Open desktop</string>
+    <string name="desktop_stop">Stop desktop</string>
+    <string name="desktop_choose">Desktop</string>
+    <string name="desktop_session">Session</string>
+    <string name="desktop_wayland">Wayland (nested)</string>
+    <string name="desktop_wayland_unavailable">X11 only</string>
+    <string name="desktop_engine">Display</string>
+    <string name="desktop_engine_x11">X11 (native)</string>
+    <string name="desktop_engine_vnc">VNC</string>
+    <string name="desktop_start">Start desktop</string>
+    <string name="desktop_starting">Starting…</string>
+    <string name="desktop_install_more">Install</string>
+    <string name="desktop_install_wayland">Wayland support</string>
+    <string name="desktop_install">Install</string>
+    <string name="terminal_missing_user">User \"%1$s\" doesn\'t exist. Change it in Settings → User.</string>
+    <string name="desktop_extra_keys">Extra keys</string>
+    <string name="desktop_extra_keys_hint">Three-finger swipe down toggles it inside the desktop.</string>
 </resources>

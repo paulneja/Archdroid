@@ -3,6 +3,7 @@ package io.github.paulneja.archdroid.core.chroot
 import io.github.paulneja.archdroid.data.model.AppSettings
 import io.github.paulneja.archdroid.data.model.BehaviorConfig
 import io.github.paulneja.archdroid.data.model.EnvConfig
+import io.github.paulneja.archdroid.data.model.InitMode
 import io.github.paulneja.archdroid.data.model.UserConfig
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -19,6 +20,30 @@ class EnterScriptTest {
         assertTrue("the self bind must be in the script", bind >= 0)
         assertTrue("suid remount must be in the script", suid > bind)
         assertTrue("mounts come before entering", suid < enter)
+    }
+
+    @Test
+    fun `leaves the app cgroup before running anything else`() {
+        val lines = EnterScript.build(AppSettings()).lines()
+        val escape = lines.indexOfFirst { it.contains("/sys/fs/cgroup/archdroid/cgroup.procs") }
+        val firstMount = lines.indexOfFirst { it.contains("mount ") }
+        assertTrue("escape must exist", escape > 0)
+        assertTrue("escape must come before the first mount", escape < firstMount)
+    }
+
+    @Test
+    fun `systemd mode logs in through pid 1 and keeps chroot as fallback`() {
+        val script = EnterScript.build(
+            AppSettings(user = UserConfig(username = "paul"), initMode = InitMode.SYSTEMD)
+        )
+        val nsenter = script.indexOf("nsenter --target")
+        val fallback = script.indexOf("exec chroot /data/local/arch /bin/su - 'paul'")
+        assertTrue(nsenter in 0 until fallback)
+    }
+
+    @Test
+    fun `compat mode enters with plain chroot`() {
+        assertFalse(EnterScript.build(AppSettings()).contains("nsenter"))
     }
 
     @Test

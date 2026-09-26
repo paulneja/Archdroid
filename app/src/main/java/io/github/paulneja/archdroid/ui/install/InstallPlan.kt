@@ -22,8 +22,8 @@ object InstallPlan {
         userChanged: Boolean,
     ): RootfsDownloadMode = if (userChanged) current else saved
 
-    fun packagesFor(selected: Set<String>, loginAsRoot: Boolean): List<String> =
-        (selected + "sudo").distinct()
+    fun packagesFor(selected: Set<String>): List<String> =
+        (selected + setOf("sudo", "python")).distinct()
 
     fun canInstall(
         freeBytes: Long,

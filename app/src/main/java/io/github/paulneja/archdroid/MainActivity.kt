@@ -1,15 +1,21 @@
 package io.github.paulneja.archdroid
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
+import io.github.paulneja.archdroid.core.util.AppLanguage
 import io.github.paulneja.archdroid.ui.AppRoot
 
 class MainActivity : ComponentActivity() {
     private val requestedRoute = mutableStateOf<String?>(null)
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguage.wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

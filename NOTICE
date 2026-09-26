@@ -1,0 +1,31 @@
+ArchDroid
+Copyright (C) 2026 Paulneja
+
+ArchDroid is free software: you can redistribute it and/or modify it under the terms of the
+GNU General Public License as published by the Free Software Foundation, either version 3 of
+the License, or (at your option) any later version. See LICENSE.
+
+This product includes third-party software:
+
+- Termux terminal-emulator and terminal-view (including app/src/main/cpp/termux.c)
+  https://github.com/termux/termux-app — Apache License 2.0
+- Termux:X11 (third_party/termux-x11, the embedded X server) — https://github.com/termux/termux-x11
+  GPLv3; it bundles X.Org server and libraries (MIT/X11 licenses), pixman, libepoxy, libtirpc
+  and bzip2 under their own permissive licenses, listed in each submodule
+- libsu by John Wu — https://github.com/topjohnwu/libsu — Apache License 2.0
+- Bouncy Castle OpenPGP 1.86 (bcpg, bcprov and bcutil) — https://www.bouncycastle.org
+  MIT; LICENSES/Bouncy-Castle-1.86.md is the original META-INF/LICENSE.md from the 1.86 JARs
+- Backdrop and Shapes by Kyant — https://github.com/Kyant0 — Apache License 2.0
+- OkHttp — https://github.com/square/okhttp — Apache License 2.0
+- AndroidX and Jetpack Compose — https://developer.android.com/jetpack — Apache License 2.0
+- docker-systemctl-replacement (app/src/main/assets/init, modified September 2026:
+  never signals PID 1, accepts import-environment)
+  https://github.com/gdraheim/docker-systemctl-replacement — EUPL 1.2, distributed here under
+  GPLv3 through the EUPL compatibility clause
+- Kotlin and kotlinx.coroutines — https://kotlinlang.org — Apache License 2.0
+
+The Arch Linux ARM signing key in app/src/main/res/raw is published by the Arch Linux ARM project.
+
+The APK includes the complete license texts in assets/licenses, including the original
+Termux:X11 and native dependency notices under assets/licenses/termux-x11 with their source
+paths preserved. The original EUPL 1.2 text is included as LICENSES/EUPL-1.2.md.

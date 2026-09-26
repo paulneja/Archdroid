@@ -2,6 +2,7 @@ package io.github.paulneja.archdroid.core.chroot
 
 import android.content.Context
 import io.github.paulneja.archdroid.R
+import io.github.paulneja.archdroid.core.init.DefaultAccounts
 import io.github.paulneja.archdroid.core.root.RootManager
 import io.github.paulneja.archdroid.core.util.RootTar
 import io.github.paulneja.archdroid.core.util.ShellQuote.quote
@@ -41,15 +42,15 @@ class ChrootInstaller(private val context: Context) {
         .followSslRedirects(false)
         .build()
 
-    private fun tarballFile(): File = File(context.filesDir, "rootfs.tar.gz")
+    private fun tarballFile(): File = InstallFiles.tarball(context.filesDir)
 
-    private fun partialFile(): File = File(context.filesDir, "rootfs.tar.gz.part")
+    private fun partialFile(): File = InstallFiles.partial(context.filesDir)
 
-    private fun signatureFile(): File = File(context.filesDir, "rootfs.tar.gz.sig")
+    private fun signatureFile(): File = InstallFiles.signature(context.filesDir)
 
-    private fun verificationFile(): File = File(context.filesDir, "rootfs.verified")
+    private fun verificationFile(): File = InstallFiles.verification(context.filesDir)
 
-    private fun checkpointFile(): File = File(context.filesDir, "install.checkpoint")
+    private fun checkpointFile(): File = InstallFiles.checkpoint(context.filesDir)
 
     suspend fun install(
         config: InstallConfig,
@@ -162,6 +163,12 @@ class ChrootInstaller(private val context: Context) {
             .build()
 
         executeFollowingAllowedRedirects(mode, request, Step.DOWNLOAD).use { response ->
+            if (DownloadResume.partialIsComplete(response.code, already)) {
+                // The previous attempt got every byte but died before the rename; VERIFY decides.
+                moveIntoPlace(partial)
+                onProgress(Progress(Step.DOWNLOAD, url, already, already))
+                return
+            }
             if (!response.isSuccessful) {
                 throw InstallException(Step.DOWNLOAD, "HTTP ${response.code} from $url")
             }
@@ -194,12 +201,16 @@ class ChrootInstaller(private val context: Context) {
                     }
                 }
             }
-            val dest = tarballFile()
-            dest.delete()
-            if (!partial.renameTo(dest)) {
-                throw InstallException(Step.DOWNLOAD, "cannot move download into place")
-            }
+            moveIntoPlace(partial)
             onProgress(Progress(Step.DOWNLOAD, url, downloaded, downloaded))
+        }
+    }
+
+    private fun moveIntoPlace(partial: File) {
+        val dest = tarballFile()
+        dest.delete()
+        if (!partial.renameTo(dest)) {
+            throw InstallException(Step.DOWNLOAD, "cannot move download into place")
         }
     }
 
@@ -365,6 +376,8 @@ class ChrootInstaller(private val context: Context) {
         chrootBash(Step.BASE_CONFIG, "pacman-key --init && pacman-key --populate archlinuxarm")
         onProgress(Progress(Step.BASE_CONFIG, "pacman -Syu"))
         chrootBash(Step.BASE_CONFIG, "pacman -Syu --noconfirm")
+        // The image ships root/root and alarm/alarm with sshd enabled.
+        RootManager.execStreaming(DefaultAccounts.lockScript(ChrootPaths.CHROOT_DIR), log)
     }
 
     private suspend fun createUser(config: InstallConfig, onProgress: (Progress) -> Unit) {
@@ -372,16 +385,14 @@ class ChrootInstaller(private val context: Context) {
         if (user.isEmpty()) return
         onProgress(Progress(Step.USER, user))
         chrootBash(Step.USER, "pacman -S --needed --noconfirm sudo")
-        chrootBash(
-            Step.USER,
-            "id ${quote(user)} >/dev/null 2>&1 || useradd -m -G wheel -s /bin/bash ${quote(user)}",
-            "ensure user $user exists",
+        chrootBash(Step.USER, UserSetup.ensureUserCommand(user), "ensure user $user exists")
+        val password = RootManager.execStreaming(
+            UserSetup.setPasswordScript(ChrootPaths.CHROOT_DIR, user, config.password),
+            log,
         )
-        chrootBash(
-            Step.USER,
-            "echo ${quote("$user:${config.password}")} | chpasswd",
-            "set password for $user",
-        )
+        if (!password.isSuccess) {
+            throw InstallException(Step.USER, commandFailure("set password for $user", password.err))
+        }
         Sudoers.grantWheelCommands().forEach { chrootBash(Step.USER, it) }
 
         chrootBash(Step.USER, "id ${quote(user)} >/dev/null")

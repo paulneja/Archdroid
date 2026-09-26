@@ -3,17 +3,20 @@ package io.github.paulneja.archdroid.data.model
 import android.annotation.SuppressLint
 
 /**
- * BIND exposes Android device nodes. PRIVATE uses an isolated tmpfs, which is safer if the
- * chroot directory is removed incorrectly.
+ * BIND (the default) shares Android's /dev, so device nodes and file descriptor links work as
+ * on the host. PRIVATE uses an isolated tmpfs, which is safer if the chroot directory is removed
+ * by hand while mounted.
  */
 enum class DevMode { PRIVATE, BIND }
 
 @SuppressLint("SdCardPath")
 data class MountConfig(
+    /** A tmpfs on /run, as systemd expects; services put sockets and PID files there. */
+    val run: Boolean = true,
     val proc: Boolean = true,
     val sys: Boolean = true,
     val dev: Boolean = true,
-    val devMode: DevMode = DevMode.PRIVATE,
+    val devMode: DevMode = DevMode.BIND,
     val devPts: Boolean = true,
     val shm: Boolean = true,
     val shmSizeMb: Int = 256,
@@ -38,8 +41,19 @@ data class UserConfig(
 
 data class BehaviorConfig(
     val autostartOnBoot: Boolean = false,
+    /** Keep a foreground notification while terminals run, so Android does not reclaim them. */
+    val terminalSurvival: Boolean = true,
     val startupScript: String = "",
     val shutdownScript: String = "",
+)
+
+/** How services start: a systemd-compatible layer, or real systemd when the kernel allows it. */
+enum class InitMode { COMPAT, SYSTEMD }
+
+/** Opt-in: -1000 means the low memory killer never picks ArchDroid, even under pressure. */
+data class ProtectionConfig(
+    val oomEnabled: Boolean = false,
+    val oomScore: Int = -900,
 )
 
 enum class RootfsDownloadMode { FAST, SECURE }
@@ -57,6 +71,8 @@ data class AppSettings(
     val env: EnvConfig = EnvConfig(),
     val user: UserConfig = UserConfig(),
     val behavior: BehaviorConfig = BehaviorConfig(),
+    val protection: ProtectionConfig = ProtectionConfig(),
+    val initMode: InitMode = InitMode.COMPAT,
     val downloadMode: RootfsDownloadMode = RootfsDownloadMode.FAST,
     val dynamicColor: Boolean = true,
 )

@@ -37,6 +37,24 @@ object RootManager {
         Shell.cmd(script).to(sink, sink).exec()
     }
 
+    /** Own shell, so long jobs do not block the shared one. */
+    suspend fun execStreamingIsolated(
+        script: String,
+        onLine: (String) -> Unit,
+    ): Shell.Result = withContext(Dispatchers.IO) {
+        val shell = Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER).build()
+        try {
+            val sink = object : CallbackList<String>(Executor { it.run() }, ArrayList<String>()) {
+                override fun onAddElement(line: String?) {
+                    line?.let(onLine)
+                }
+            }
+            shell.newJob().add(script).to(sink, sink).exec()
+        } finally {
+            shell.close()
+        }
+    }
+
     suspend fun test(command: String): Boolean = exec(command).isSuccess
 
     suspend fun outputOf(command: String): List<String> = exec(command).out

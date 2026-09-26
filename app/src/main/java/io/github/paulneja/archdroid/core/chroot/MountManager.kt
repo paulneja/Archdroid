@@ -7,10 +7,15 @@ object MountManager {
 
     private const val C = ChrootPaths.CHROOT_DIR
 
+    /** Stacked mounts need one pass per layer; stop long before an endless loop. */
+    private const val MAX_UNMOUNT_PASSES = 8
+
     data class MountResult(val ok: Boolean, val log: List<String>)
 
     /** Verifies the result through /proc/mounts instead of the last shell exit code. */
     suspend fun ensureMounted(cfg: MountConfig): MountResult {
+        val invalid = MountPlan.validate(cfg)
+        if (invalid.isNotEmpty()) return MountResult(ok = false, log = invalid)
         val result = RootManager.exec(*MountPlan.mountCommands(cfg, C).toTypedArray())
         val missing = MountPlan.missingMounts(RootManager.outputOf("cat /proc/mounts"), cfg, C)
         return MountResult(
@@ -19,22 +24,43 @@ object MountManager {
         )
     }
 
+    /** Applies a changed config to a live chroot: drops what is no longer wanted, adds the rest. */
+    suspend fun reconcile(cfg: MountConfig): MountResult {
+        val invalid = MountPlan.validate(cfg)
+        if (invalid.isNotEmpty()) return MountResult(ok = false, log = invalid)
+        val stale = MountPlan.staleMountLines(RootManager.outputOf("cat /proc/mounts"), cfg, C)
+        val dropped = RootManager.exec(*MountPlan.unmountCommands(stale, C).toTypedArray())
+        val added = ensureMounted(cfg)
+        return added.copy(log = dropped.out + dropped.err + added.log)
+    }
+
     /** Reports failure while any mount remains below the chroot. */
-    suspend fun unmountAll(cfg: MountConfig): MountResult {
-        val result = RootManager.exec(*MountPlan.unmountCommands(cfg, C).toTypedArray())
-        val residual = residualMounts()
-        return MountResult(
-            ok = residual.isEmpty(),
-            log = result.out + result.err + residual.map { "still mounted: $it" },
-        )
+    suspend fun unmountAll(): MountResult {
+        val log = mutableListOf<String>()
+        var residual = residualMounts()
+        var passes = 0
+        while (residual.isNotEmpty() && passes < MAX_UNMOUNT_PASSES) {
+            val procMounts = RootManager.outputOf("cat /proc/mounts")
+            val result = RootManager.exec(*MountPlan.unmountCommands(procMounts, C).toTypedArray())
+            log += result.out + result.err
+            val next = residualMounts()
+            if (next.size >= residual.size) {
+                residual = next
+                break
+            }
+            residual = next
+            passes++
+        }
+        return MountResult(ok = residual.isEmpty(), log = log + residual.map { "still mounted: $it" })
     }
 
     suspend fun isMounted(): Boolean =
         RootManager.test("grep -q ' $C/proc ' /proc/mounts")
 
     suspend fun activeMounts(): List<String> =
-        MountPlan.residualMounts(RootManager.outputOf("cat /proc/mounts"), C)
+        MountPlan.residualMounts(RootManager.outputOf("cat /proc/mounts"), C).distinct()
 
     /** Must be empty before deleting the rootfs. */
-    suspend fun residualMounts(): List<String> = activeMounts()
+    suspend fun residualMounts(): List<String> =
+        MountPlan.residualMounts(RootManager.outputOf("cat /proc/mounts"), C)
 }

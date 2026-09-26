@@ -1,8 +1,8 @@
 # ArchDroid
 
 ArchDroid runs an Arch Linux ARM root filesystem inside a chroot on a rooted Android
-device. It includes a guided installer, a tabbed terminal, mount controls, backups, and
-foreground notifications for long-running installation work.
+device. It includes a guided installer, persistent terminal tabs, mount controls, backups,
+foreground notifications, and an in-app Linux desktop.
 
 The project is currently built for `arm64-v8a` devices.
 
@@ -14,12 +14,18 @@ The project is currently built for `arm64-v8a` devices.
 - Root filesystem verification with the pinned Arch Linux ARM OpenPGP key
 - Foreground progress notifications with pause, resume, cancel, and retry actions
 - Tabbed terminal with extra keys for common terminal controls
+- Persistent and protected terminal tabs with survival mode
 - Configurable `/proc`, `/sys`, `/dev`, shared storage, and tmpfs mounts
 - Root or regular-user login with `sudo` support
 - DNS, hostname, shell, startup script, and shutdown script settings
 - Root filesystem backup and restore
 - Optional mount setup after boot
 - Safe single-tab close that leaves other terminal sessions running
+- KDE Plasma, XFCE, LXQt, and MATE desktop sessions
+- Embedded Termux:X11 and localhost VNC display engines
+- X11 and nested Wayland sessions, software rendering, touchpad input, and desktop audio
+- systemd compatibility services with optional real systemd when the kernel supports it
+- Battery, OOM, phantom-process, and process-cgroup protection controls
 
 ## Requirements
 
@@ -37,7 +43,7 @@ a chroot. Review every root request before granting it.
 Clone the repository and build the debug APK:
 
 ```bash
-git clone https://github.com/paulneja/Archdroid.git
+git clone --recursive https://github.com/paulneja/Archdroid.git
 cd Archdroid
 ./gradlew assembleDebug
 ```
@@ -97,6 +103,9 @@ Tags starting with `v` also publish a GitHub Release with generated notes and th
 release APK attached:
 
 ```bash
-git tag v0.1.1
-git push origin v0.1.1
+git tag v0.2.0
+git push origin v0.2.0
 ```
+
+ArchDroid is licensed under the GNU GPLv3. Third-party components keep their original
+licenses; see [NOTICE](NOTICE) and the license files shipped with each component.

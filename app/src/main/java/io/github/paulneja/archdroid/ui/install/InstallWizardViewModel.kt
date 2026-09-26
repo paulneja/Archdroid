@@ -116,7 +116,7 @@ class InstallWizardViewModel(app: Application) : AndroidViewModel(app) {
         coordinator.queue(
             InstallConfig(
                 downloadMode = s.downloadMode,
-                packages = InstallPlan.packagesFor(s.selectedPackages, s.loginAsRoot),
+                packages = InstallPlan.packagesFor(s.selectedPackages),
                 username = if (s.loginAsRoot) "" else s.username.trim(),
                 password = s.password,
                 env = EnvConfig(),

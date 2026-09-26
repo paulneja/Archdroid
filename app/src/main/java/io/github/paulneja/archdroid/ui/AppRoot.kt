@@ -33,8 +33,15 @@ import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.core.chroot.ChrootStatus
-import io.github.paulneja.archdroid.ui.components.GlassBottomBar
-import io.github.paulneja.archdroid.ui.components.GlassNavItem
+import io.github.paulneja.archdroid.ui.components.LiquidBottomTabs
+import io.github.paulneja.archdroid.ui.components.LiquidTabItem
+import io.github.paulneja.archdroid.ui.desktop.DesktopScreen
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.rounded.DesktopWindows
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import io.github.paulneja.archdroid.ui.home.HomeScreen
 import io.github.paulneja.archdroid.ui.install.InstallWizardScreen
 import io.github.paulneja.archdroid.ui.onboarding.RootCheckScreen
@@ -43,6 +50,8 @@ import io.github.paulneja.archdroid.ui.settings.BackupScreen
 import io.github.paulneja.archdroid.ui.settings.BehaviorScreen
 import io.github.paulneja.archdroid.ui.settings.EnvScreen
 import io.github.paulneja.archdroid.ui.settings.MountsScreen
+import io.github.paulneja.archdroid.ui.settings.ProtectionScreen
+import io.github.paulneja.archdroid.ui.settings.InitScreen
 import io.github.paulneja.archdroid.ui.settings.SettingsScreen
 import io.github.paulneja.archdroid.ui.settings.UserScreen
 import io.github.paulneja.archdroid.ui.terminal.TerminalScreen
@@ -79,6 +88,9 @@ fun AppRoot(
     }
 }
 
+/** Top-level pages shown in the pager, in bar order. */
+enum class MainPage { HOME, TERMINAL, DESKTOP, SETTINGS }
+
 @Composable
 private fun MainScaffold(
     viewModel: AppViewModel,
@@ -90,18 +102,34 @@ private fun MainScaffold(
     val contentBackdrop = rememberLayerBackdrop { drawContent() }
     val navController = rememberNavController()
     val status by viewModel.chroot.status.collectAsStateWithLifecycle()
-    val startRoute = if (status == ChrootStatus.NOT_INSTALLED) Routes.INSTALL else Routes.HOME
+    val startRoute = if (status == ChrootStatus.NOT_INSTALLED) Routes.INSTALL else Routes.MAIN
+    val pagerState = rememberPagerState { MainPage.entries.size }
+    val scope = rememberCoroutineScope()
+    val showPage: (MainPage) -> Unit = { page ->
+        if (navController.currentDestination?.route != Routes.MAIN) {
+            navController.navigate(Routes.MAIN) {
+                popUpTo(Routes.MAIN) { inclusive = false }
+                launchSingleTop = true
+            }
+        }
+        scope.launch { pagerState.animateScrollToPage(page.ordinal) }
+    }
 
     LaunchedEffect(requestedRoute) {
-        if (Routes.acceptsExternalRequest(requestedRoute)) {
-            navController.navigate(requestedRoute!!) { launchSingleTop = true }
+        when {
+            requestedRoute == Routes.TERMINAL -> showPage(MainPage.TERMINAL)
+            Routes.acceptsExternalRequest(requestedRoute) ->
+                navController.navigate(requestedRoute!!) { launchSingleTop = true }
         }
         if (requestedRoute != null) onRouteConsumed()
     }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val barVisible = currentRoute == Routes.HOME || currentRoute == Routes.SETTINGS
+    val currentPage = MainPage.entries[pagerState.currentPage]
+    // Terminal and desktop own the whole screen; their keys and pointer must not sit under the bar.
+    val barVisible = currentRoute == Routes.MAIN &&
+        (currentPage == MainPage.HOME || currentPage == MainPage.SETTINGS)
 
     Box(Modifier.fillMaxSize()) {
         NavHost(
@@ -111,28 +139,44 @@ private fun MainScaffold(
                 .fillMaxSize()
                 .layerBackdrop(contentBackdrop),
         ) {
-            composable(Routes.HOME) {
-                HomeScreen(
-                    backdrop = backgroundBackdrop,
-                    onOpenTerminal = { navController.navigate(Routes.TERMINAL) },
-                    onInstall = { navController.navigate(Routes.INSTALL) },
-                )
-            }
-            composable(Routes.TERMINAL) {
-                TerminalScreen(onClose = { navController.popBackStack() })
+            composable(Routes.MAIN) {
+                // Leaving a full-screen page with back returns to Home instead of closing anything.
+                BackHandler(enabled = currentPage != MainPage.HOME) { showPage(MainPage.HOME) }
+                HorizontalPager(
+                    state = pagerState,
+                    userScrollEnabled = false,
+                    modifier = Modifier.fillMaxSize(),
+                ) { index ->
+                    when (MainPage.entries[index]) {
+                        MainPage.HOME -> HomeScreen(
+                            backdrop = backgroundBackdrop,
+                            onOpenTerminal = { showPage(MainPage.TERMINAL) },
+                            onInstall = { navController.navigate(Routes.INSTALL) },
+                        )
+                        MainPage.TERMINAL -> TerminalScreen(
+                            visible = pagerState.settledPage == MainPage.TERMINAL.ordinal,
+                            onClose = { showPage(MainPage.HOME) },
+                        )
+                        MainPage.DESKTOP -> DesktopScreen(
+                            backdrop = backgroundBackdrop,
+                            onClose = { showPage(MainPage.HOME) },
+                        )
+                        MainPage.SETTINGS -> SettingsScreen(
+                            backdrop = backgroundBackdrop,
+                            onOpenSection = { navController.navigate(it) },
+                        )
+                    }
+                }
             }
             composable(Routes.INSTALL) {
                 InstallWizardScreen(
                     backdrop = backgroundBackdrop,
                     onDone = {
-                        navController.navigate(Routes.HOME) {
+                        navController.navigate(Routes.MAIN) {
                             popUpTo(0) { inclusive = true }
                         }
                     },
                 )
-            }
-            composable(Routes.SETTINGS) {
-                SettingsScreen(backdrop = backgroundBackdrop, onOpenSection = { navController.navigate(it) })
             }
             composable(Routes.SETTINGS_MOUNTS) {
                 MountsScreen(backdrop = backgroundBackdrop, onBack = { navController.popBackStack() })
@@ -149,6 +193,12 @@ private fun MainScaffold(
             composable(Routes.SETTINGS_BACKUP) {
                 BackupScreen(backdrop = backgroundBackdrop, onBack = { navController.popBackStack() })
             }
+            composable(Routes.SETTINGS_INIT) {
+                InitScreen(backdrop = backgroundBackdrop, onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_PROTECTION) {
+                ProtectionScreen(backdrop = backgroundBackdrop, onBack = { navController.popBackStack() })
+            }
             composable(Routes.SETTINGS_ABOUT) {
                 AboutScreen(backdrop = backgroundBackdrop, onBack = { navController.popBackStack() })
             }
@@ -161,24 +211,18 @@ private fun MainScaffold(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(bottom = 12.dp),
+                .padding(start = 24.dp, end = 24.dp, bottom = 12.dp),
         ) {
-            GlassBottomBar(
-                backdrop = contentBackdrop,
+            LiquidBottomTabs(
                 items = listOf(
-                    GlassNavItem(Routes.HOME, Icons.Rounded.Home, stringResource(R.string.nav_home)),
-                    GlassNavItem(Routes.TERMINAL, Icons.Rounded.Terminal, stringResource(R.string.nav_terminal)),
-                    GlassNavItem(Routes.SETTINGS, Icons.Rounded.Settings, stringResource(R.string.nav_settings)),
+                    LiquidTabItem(Icons.Rounded.Home, stringResource(R.string.nav_home)),
+                    LiquidTabItem(Icons.Rounded.Terminal, stringResource(R.string.nav_terminal)),
+                    LiquidTabItem(Icons.Rounded.DesktopWindows, stringResource(R.string.nav_desktop)),
+                    LiquidTabItem(Icons.Rounded.Settings, stringResource(R.string.nav_settings)),
                 ),
-                selectedRoute = currentRoute,
-                onSelect = { route ->
-                    if (route != currentRoute) {
-                        navController.navigate(route) {
-                            launchSingleTop = true
-                            popUpTo(Routes.HOME)
-                        }
-                    }
-                },
+                selectedIndex = pagerState.currentPage,
+                onSelected = { showPage(MainPage.entries[it]) },
+                backdrop = contentBackdrop,
             )
         }
     }

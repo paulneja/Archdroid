@@ -19,22 +19,36 @@ class BackdropLayeringTest {
         assertTrue("no UI sources found to scan", uiSources.size > 10)
     }
 
+    // LiquidBottomTabs records an invisible copy of its own tabs for the selection pill, which is
+    // a sibling of that copy, so it cannot sample itself.
+    private val layerOwners = listOf("AppRoot.kt", "LiquidBottomTabs.kt")
+
     @Test
-    fun `only AppRoot declares backdrop layers`() {
+    fun `only AppRoot and the tab bar declare backdrop layers`() {
         val declaring = uiSources
             .filter { it.readText().contains("rememberLayerBackdrop") }
             .map { it.name }
             .sorted()
-        assertEquals(listOf("AppRoot.kt"), declaring)
+        assertEquals(layerOwners, declaring)
     }
 
     @Test
-    fun `only AppRoot marks content as a layer source`() {
+    fun `only AppRoot and the tab bar mark content as a layer source`() {
         val marking = uiSources
             .filter { it.readText().contains(".layerBackdrop(") }
             .map { it.name }
             .sorted()
-        assertEquals(listOf("AppRoot.kt"), marking)
+        assertEquals(layerOwners, marking)
+    }
+
+    @Test
+    fun `the tab bar pill is not inside the layer it samples`() {
+        val bar = uiSources.first { it.name == "LiquidBottomTabs.kt" }.readText()
+        val recorder = bar.indexOf(".layerBackdrop(tabsBackdrop)")
+        val pill = bar.indexOf("rememberCombinedBackdrop(backdrop, tabsBackdrop)")
+        // The recording Row closes before the pill Box starts.
+        val recorderEnd = bar.indexOf("// The selection pill.")
+        assertTrue(recorder in 0 until recorderEnd && pill > recorderEnd)
     }
 
     private val appRoot: String

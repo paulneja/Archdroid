@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kyant.backdrop.Backdrop
 import io.github.paulneja.archdroid.R
+import io.github.paulneja.archdroid.core.chroot.EnvValidation
 import io.github.paulneja.archdroid.ui.components.GlassCard
 
 @Composable
@@ -46,40 +47,36 @@ fun EnvScreen(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
+            DraftField(
                 value = env.hostname,
-                onValueChange = { viewModel.updateEnv(env.copy(hostname = it)) },
-                label = { Text(stringResource(R.string.env_hostname)) },
-                singleLine = true,
+                label = stringResource(R.string.env_hostname),
+                onCommit = { viewModel.updateEnv(env.copy(hostname = it)) },
+                isValid = EnvValidation::isHostname,
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
             )
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
+            DraftField(
                 value = env.dnsPrimary,
-                onValueChange = { viewModel.updateEnv(env.copy(dnsPrimary = it)) },
-                label = { Text(stringResource(R.string.env_dns1)) },
-                singleLine = true,
+                label = stringResource(R.string.env_dns1),
+                onCommit = { viewModel.updateEnv(env.copy(dnsPrimary = it)) },
+                isValid = EnvValidation::isDnsServer,
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
             )
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
+            DraftField(
                 value = env.dnsSecondary,
-                onValueChange = { viewModel.updateEnv(env.copy(dnsSecondary = it)) },
-                label = { Text(stringResource(R.string.env_dns2)) },
-                singleLine = true,
+                label = stringResource(R.string.env_dns2),
+                onCommit = { viewModel.updateEnv(env.copy(dnsSecondary = it)) },
+                isValid = EnvValidation::isDnsServer,
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
             )
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
+            DraftField(
                 value = env.lang,
-                onValueChange = { viewModel.updateEnv(env.copy(lang = it)) },
-                label = { Text(stringResource(R.string.env_lang)) },
-                singleLine = true,
+                label = stringResource(R.string.env_lang),
+                onCommit = { viewModel.updateEnv(env.copy(lang = it)) },
+                isValid = EnvValidation::isLang,
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
             )
         }
 

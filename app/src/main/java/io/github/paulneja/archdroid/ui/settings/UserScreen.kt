@@ -20,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kyant.backdrop.Backdrop
 import io.github.paulneja.archdroid.R
+import io.github.paulneja.archdroid.ui.install.InstallPlan
 import io.github.paulneja.archdroid.ui.components.GlassCard
 import io.github.paulneja.archdroid.ui.components.LiquidButton
 
@@ -32,8 +33,10 @@ fun UserScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val user = settings.user
     var newPassword by remember { mutableStateOf("") }
+    val applyError by viewModel.applyError.collectAsStateWithLifecycle()
 
     SettingsSubScreen(backdrop, stringResource(R.string.settings_user), onBack) {
+        applyError?.let { ApplyErrorCard(backdrop, it, viewModel::clearApplyError) }
         GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth()) {
             SwitchRow(
                 stringResource(R.string.wizard_login_as_root),
@@ -43,13 +46,12 @@ fun UserScreen(
 
             if (!user.loginAsRoot) {
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
+                DraftField(
                     value = user.username,
-                    onValueChange = { viewModel.updateUser(user.copy(username = it)) },
-                    label = { Text(stringResource(R.string.wizard_username)) },
-                    singleLine = true,
+                    label = stringResource(R.string.wizard_username),
+                    onCommit = { viewModel.updateUser(user.copy(username = it)) },
+                    isValid = InstallPlan::usernameValid,
                     modifier = Modifier.fillMaxWidth(),
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(

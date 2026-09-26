@@ -65,6 +65,18 @@ class SessionProcessTreeTest {
     }
 
     @Test
+    fun `oom script only touches verified members of the session`() {
+        val script = SessionProcessTree.oomScript(
+            SessionProcessTree.ProcessIdentity(pid = 101, sessionId = 101, startTimeTicks = 9_001),
+            -1000,
+        )
+        assertTrue(script.contains("session_members"))
+        assertTrue(script.contains("read_member"))
+        assertTrue(script.contains("echo -1000 > /proc/"))
+        assertFalse(script.contains("kill "))
+    }
+
+    @Test
     fun `process identity includes kernel start time and rejects a reused leader`() {
         val original = SessionProcessTree.identity(stat(pid = 101, name = "su", startTime = 9_001))
         val reused = stat(pid = 101, name = "unrelated", startTime = 9_999)

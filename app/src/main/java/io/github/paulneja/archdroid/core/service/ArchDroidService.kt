@@ -40,13 +40,15 @@ class ArchDroidService : Service() {
                 enterForeground()
                 coordinator.startQueued()
             }
-            ACTION_RESUME -> {
+            ACTION_RESUME, ACTION_RETRY -> {
                 enterForeground()
-                coordinator.resume()
-            }
-            ACTION_RETRY -> {
-                enterForeground()
-                coordinator.retry()
+                if (!coordinator.hasConfig()) {
+                    // Config lives in memory; it is gone after process death.
+                    stopServiceForeground()
+                    notifications.postStateLost()
+                    return START_NOT_STICKY
+                }
+                if (intent.action == ACTION_RESUME) coordinator.resume() else coordinator.retry()
             }
             ACTION_PAUSE -> coordinator.pause()
             ACTION_CANCEL -> coordinator.cancel()

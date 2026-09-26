@@ -15,16 +15,28 @@ val releaseSigningReady = listOf(
 ).all { !it.orNull.isNullOrBlank() } &&
     releaseStoreFile.orNull?.let(::file)?.isFile == true
 
+val licenseAssets = layout.buildDirectory.dir("generated/licenseAssets")
+val generateLicenseAssets by tasks.registering(Copy::class) {
+    from(rootProject.file("LICENSE"), rootProject.file("NOTICE"))
+    from(rootProject.file("LICENSES"))
+    from(rootProject.file("third_party/termux-x11")) {
+        include("**/COPYING*", "**/LICENSE*", "**/NOTICE*")
+        exclude("**/build/**", "**/.cxx/**", "**/.git/**")
+        into("termux-x11")
+    }
+    into(licenseAssets.map { it.dir("licenses") })
+}
+
 android {
     namespace = "io.github.paulneja.archdroid"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "io.github.paulneja.archdroid"
+        applicationId = rootProject.extra["archdroidApplicationId"] as String
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.1.2"
+        versionCode = 4
+        versionName = "0.2.0"
 
         ndk { abiFilters += "arm64-v8a" }
     }
@@ -60,9 +72,11 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         debug {
-            applicationIdSuffix = ".debug"
+            applicationIdSuffix = rootProject.extra["archdroidDebugSuffix"] as String
         }
     }
+
+    sourceSets.getByName("main").assets.srcDir(licenseAssets.get().asFile)
 
     buildFeatures {
         compose = true
@@ -74,12 +88,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
-    }
-
     lint {
         // The installed rootfs is aarch64-only.
         disable += "ChromeOsAbiSupport"
@@ -88,7 +96,9 @@ android {
     packaging {
         resources.pickFirsts += "META-INF/LICENSE.md"
         resources.pickFirsts += "META-INF/NOTICE.md"
-        jniLibs.useLegacyPackaging = true
+        // The X server is started by app_process straight from the APK, so libraries must stay
+        // uncompressed and page aligned inside it.
+        jniLibs.useLegacyPackaging = false
         // Prefer the locally built 16 KB-aligned libtermux.so.
         jniLibs.pickFirsts += "**/libtermux.so"
     }
@@ -101,6 +111,7 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":lorie"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -129,3 +140,5 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }
+
+tasks.named("preBuild") { dependsOn(generateLicenseAssets) }

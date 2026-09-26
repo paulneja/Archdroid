@@ -67,6 +67,25 @@ class ArchDroidNotifications(private val context: Context) {
         }
     }
 
+    fun postStateLost() {
+        val notification = NotificationCompat.Builder(context, CHANNEL_EVENTS)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(context.getString(R.string.notification_state_lost_title))
+            .setContentText(context.getString(R.string.notification_state_lost_body))
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(context.getString(R.string.notification_state_lost_body))
+            )
+            .setAutoCancel(true)
+            .setContentIntent(openInstallIntent())
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(EVENT_NOTIFICATION_ID, notification)
+        } catch (_: SecurityException) {
+            // Without the permission the wizard shows the paused install on the next launch.
+        }
+    }
+
     fun cancelEvent() = NotificationManagerCompat.from(context).cancel(EVENT_NOTIFICATION_ID)
 
     private fun title(model: InstallNotificationModel): String = when (model.kind) {
@@ -198,6 +217,15 @@ class ArchDroidNotifications(private val context: Context) {
         PENDING_INTENT_FLAGS,
     )
 
+    private fun openInstallIntent(): PendingIntent = PendingIntent.getActivity(
+        context,
+        22,
+        Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            .putExtra(MainActivity.EXTRA_ROUTE, Routes.INSTALL),
+        PENDING_INTENT_FLAGS,
+    )
+
     private fun formatBytes(bytes: Long): String =
         Formatter.formatShortFileSize(context, bytes.coerceAtLeast(0L))
 
@@ -215,6 +243,8 @@ class ArchDroidNotifications(private val context: Context) {
     companion object {
         const val CHANNEL_INSTALL = "install"
         const val CHANNEL_EVENTS = "events"
+        const val CHANNEL_SESSIONS = "sessions"
+        const val SESSION_NOTIFICATION_ID = 1003
         const val INSTALL_NOTIFICATION_ID = 1001
         const val EVENT_NOTIFICATION_ID = 1002
         private const val PENDING_INTENT_FLAGS =
@@ -238,7 +268,17 @@ class ArchDroidNotifications(private val context: Context) {
             ).apply {
                 description = context.getString(R.string.notification_channel_events_description)
             }
-            manager.createNotificationChannels(listOf(install, events))
+            val sessions = NotificationChannel(
+                CHANNEL_SESSIONS,
+                context.getString(R.string.notification_channel_sessions),
+                NotificationManager.IMPORTANCE_LOW,
+            ).apply {
+                description = context.getString(R.string.notification_channel_sessions_description)
+                setSound(null, null)
+                enableVibration(false)
+                setShowBadge(false)
+            }
+            manager.createNotificationChannels(listOf(install, events, sessions))
         }
     }
 }

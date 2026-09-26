@@ -1,6 +1,8 @@
 package io.github.paulneja.archdroid.core.chroot
 
 import android.content.Context
+import io.github.paulneja.archdroid.core.init.CompatInit
+import io.github.paulneja.archdroid.core.init.InitSystem
 import io.github.paulneja.archdroid.core.root.RootManager
 import io.github.paulneja.archdroid.core.util.RootTar
 import io.github.paulneja.archdroid.core.util.ShellQuote.quote
@@ -23,9 +25,6 @@ class ChrootController(
         "chroot still has active mounts: " + points.joinToString(", ")
     )
 
-    @Volatile
-    private var pinnedByUser = false
-
     private val _status = MutableStateFlow(ChrootStatus.UNKNOWN)
     val status: StateFlow<ChrootStatus> = _status.asStateFlow()
 
@@ -43,47 +42,83 @@ class ChrootController(
     suspend fun missingEssentials(): List<String> {
         val cfg = settings.current()
         val required = ChrootHealth.requiredPaths(ChrootPaths.CHROOT_DIR, cfg.user.loginAsRoot)
-        return ChrootHealth.missingFrom(
-            RootManager.outputOfScript(ChrootHealth.probeScript(required))
-        )
+        var script = ChrootHealth.probeScript(required)
+        if (!cfg.user.loginAsRoot) {
+            script += "\n" + ChrootHealth.userProbe(ChrootPaths.CHROOT_DIR, cfg.user.username)
+        }
+        return ChrootHealth.missingFrom(RootManager.outputOfScript(script))
     }
 
-    suspend fun prepareSession(pin: Boolean = false): MountManager.MountResult {
-        if (pin) pinnedByUser = true
+    /** Until a user is chosen, log in with the account that exists in the rootfs. */
+    private suspend fun adoptExistingUser() {
+        if (settings.hasChosenUser()) return
+        val passwd = RootManager.outputOf("cat ${quote("${ChrootPaths.CHROOT_DIR}/etc/passwd")}")
+        val existing = ChrootHealth.existingLoginUser(passwd) ?: return
+        val current = settings.current().user
+        if (current.loginAsRoot || current.username == existing) return
+        settings.updateUser(current.copy(username = existing))
+    }
+
+    suspend fun prepareSession(): MountManager.MountResult {
+        // Before the enter script is written: it bakes in the login user.
+        adoptExistingUser()
         val cfg = settings.current()
+        val migrated = RootManager.execScript(UserSetup.migrateLegacyUsersScript(ChrootPaths.CHROOT_DIR))
+        if (!migrated.isSuccess) return MountManager.MountResult(false, migrated.out + migrated.err)
         writeEnterScript(cfg)
         applyEnv(cfg.env)
         val result = MountManager.ensureMounted(cfg.mounts)
+        if (result.ok) {
+            if (!cfg.user.loginAsRoot) {
+                val user = ensureUser(cfg.user.username, null)
+                if (user.isFailure) return MountManager.MountResult(false, listOf(user.exceptionOrNull().toString()))
+            }
+            initSystem.start(cfg.initMode)
+        }
         refresh()
         return result
     }
 
+    private val initSystem = InitSystem(context)
+
     suspend fun stop(): MountManager.MountResult {
-        pinnedByUser = false
         val cfg = settings.current()
         if (cfg.behavior.shutdownScript.isNotBlank()) {
             val script = cfg.behavior.shutdownScript.trim()
             runInsideChroot("test -f ${quote(script)} && sh ${quote(script)}")
         }
-        val result = MountManager.unmountAll(cfg.mounts)
+        initSystem.stop(cfg.initMode)
+        // Nothing may keep running on a rootfs whose mounts are about to disappear.
+        RootManager.execScript(CompatInit.killChrootProcessesScript(ChrootPaths.CHROOT_DIR))
+        val result = MountManager.unmountAll()
         refresh()
         return result
-    }
-
-    suspend fun releaseSession(remainingSessions: Int): MountManager.MountResult? {
-        if (!MountLifetime.shouldUnmount(pinnedByUser, remainingSessions)) return null
-        return stop()
     }
 
     suspend fun applyEnv(env: EnvConfig) {
         val cmds = EtcConfig.resolvConfCommands(
             ChrootPaths.CHROOT_DIR, env.dnsPrimary, env.dnsSecondary,
-        ) + EtcConfig.hostnameCommands(ChrootPaths.CHROOT_DIR, env.hostname)
+        ) + EtcConfig.hostnameCommands(ChrootPaths.CHROOT_DIR, env.hostname) +
+            EtcConfig.localtimeCommands(ChrootPaths.CHROOT_DIR)
         RootManager.exec(*cmds.toTypedArray())
     }
 
     suspend fun runInsideChroot(command: String) {
         RootManager.execScript("chroot ${ChrootPaths.CHROOT_DIR} /bin/bash -lc ${quote(command)}")
+    }
+
+    /** Creates the user when it is missing and optionally sets its password. */
+    suspend fun ensureUser(username: String, password: String?): Result<Unit> = runCatching {
+        val create = RootManager.execScript(
+            "chroot ${ChrootPaths.CHROOT_DIR} /bin/bash -lc ${quote(UserSetup.ensureUserCommand(username))}"
+        )
+        if (!create.isSuccess) error("useradd: ${create.err.joinToString()}")
+        if (password != null) {
+            val set = RootManager.execScript(
+                UserSetup.setPasswordScript(ChrootPaths.CHROOT_DIR, username, password)
+            )
+            if (!set.isSuccess) error("chpasswd: ${set.err.joinToString()}")
+        }
     }
 
     fun buildEnterScript(cfg: AppSettings): String = EnterScript.build(cfg)
@@ -98,12 +133,16 @@ class ChrootController(
         )
     }
 
+    /** Unmounts first so /proc, /sys, /dev and shared storage never end up in the archive. */
     suspend fun exportBackup(destInAppFiles: File): Result<File> = runCatching {
+        ensureUnmounted()
         val script = buildString {
             append(RootTar.RESOLVE)
             appendLine(
-                "\$TAR -C ${quote(ChrootPaths.CHROOT_DIR)} -czpf ${quote(destInAppFiles.absolutePath)} ."
+                "\$TAR -C ${quote(ChrootPaths.CHROOT_DIR)} -czpf ${quote(destInAppFiles.absolutePath)} . || exit \$?"
             )
+            // The app copies the archive out, so it must be able to read what root wrote.
+            appendLine("chmod 644 ${quote(destInAppFiles.absolutePath)}")
         }
         RootManager.execScript(script).also {
             if (!it.isSuccess) error("tar failed: ${it.err.joinToString()}")
@@ -111,7 +150,10 @@ class ChrootController(
         destInAppFiles
     }
 
+    /** Checks the whole archive before anything in the current rootfs is deleted. */
     suspend fun importBackup(archiveInAppFiles: File): Result<Unit> = runCatching {
+        val listing = RootManager.execScript(BackupCheck.script(archiveInAppFiles.absolutePath))
+        BackupCheck.requireRootfs(listing.out)
         clearRootfs()
         val script = buildString {
             append(RootTar.RESOLVE)
@@ -130,7 +172,7 @@ class ChrootController(
         RootManager.exec("rm -rf ${quote(ChrootPaths.CHROOT_DIR)}").also {
             if (!it.isSuccess) error("rm failed: ${it.err.joinToString()}")
         }
-        File(context.filesDir, "install.checkpoint").delete()
+        InstallFiles.all(context.filesDir).forEach(File::delete)
         refresh()
     }
 
@@ -149,8 +191,7 @@ class ChrootController(
 
     /** Refuses deletion while a bind mount could expose files outside the rootfs. */
     private suspend fun ensureUnmounted() {
-        val cfg = settings.current()
-        MountManager.unmountAll(cfg.mounts)
+        MountManager.unmountAll()
         val residual = MountManager.residualMounts()
         if (residual.isNotEmpty()) throw MountsBusyException(residual)
     }

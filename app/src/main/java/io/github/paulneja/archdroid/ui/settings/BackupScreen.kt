@@ -43,6 +43,8 @@ fun BackupScreen(
     val state by viewModel.backupState.collectAsStateWithLifecycle()
     var showResetConfirm by remember { mutableStateOf(false) }
     var showResetFinal by remember { mutableStateOf(false) }
+    var showImportConfirm by remember { mutableStateOf(false) }
+    val busy = state is SettingsViewModel.BackupState.Running
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/gzip")
@@ -111,6 +113,7 @@ fun BackupScreen(
             LiquidButton(
                 onClick = { exportLauncher.launch("archdroid-backup.tar.gz") },
                 backdrop = backdrop,
+                enabled = !busy,
                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -123,8 +126,9 @@ fun BackupScreen(
             }
             Spacer(Modifier.height(12.dp))
             LiquidButton(
-                onClick = { importLauncher.launch(arrayOf("*/*")) },
+                onClick = { showImportConfirm = true },
                 backdrop = backdrop,
+                enabled = !busy,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Icon(Icons.Rounded.Restore, contentDescription = null)
@@ -152,6 +156,7 @@ fun BackupScreen(
             LiquidButton(
                 onClick = { showResetConfirm = true },
                 backdrop = backdrop,
+                enabled = !busy,
                 tint = MaterialTheme.colorScheme.error.copy(alpha = 0.25f),
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -163,6 +168,27 @@ fun BackupScreen(
                 )
             }
         }
+    }
+
+    if (showImportConfirm) {
+        AlertDialog(
+            onDismissRequest = { showImportConfirm = false },
+            title = { Text(stringResource(R.string.backup_import_confirm_title)) },
+            text = { Text(stringResource(R.string.backup_import_confirm_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showImportConfirm = false
+                    importLauncher.launch(arrayOf("application/gzip", "application/x-gzip", "application/octet-stream"))
+                }) {
+                    Text(stringResource(R.string.backup_import_confirm_button), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showImportConfirm = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
     }
 
     if (showResetConfirm) {

@@ -47,7 +47,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             _activeMounts.value = MountManager.activeMounts()
             _kernel.value = RootManager.outputOf("uname -r").firstOrNull() ?: "—"
             _diskUsage.value = RootManager
-                .outputOf("du -sh ${ChrootPaths.CHROOT_DIR} 2>/dev/null | cut -f1")
+                .outputOf("du -xsh ${ChrootPaths.CHROOT_DIR} 2>/dev/null | cut -f1")
                 .firstOrNull() ?: "—"
         }
     }
@@ -60,7 +60,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val result = when (status.value) {
                     ChrootStatus.MOUNTED -> chroot.stop()
-                    ChrootStatus.INSTALLED -> chroot.prepareSession(pin = true)
+                    ChrootStatus.INSTALLED -> chroot.prepareSession()
                     else -> null
                 }
                 if (result != null && !result.ok) {

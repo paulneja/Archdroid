@@ -15,8 +15,8 @@ class DevModeTest {
         MountPlan.mountCommands(MountConfig(devMode = mode), c)
 
     @Test
-    fun `the safe private dev is the default`() {
-        assertEquals(DevMode.PRIVATE, MountConfig().devMode)
+    fun `android's dev is the default`() {
+        assertEquals(DevMode.BIND, MountConfig().devMode)
     }
 
     @Test
@@ -24,7 +24,7 @@ class DevModeTest {
         val joined = cmds(DevMode.PRIVATE).joinToString("\n")
         assertFalse(
             "binding the host /dev is the path that lets a delete escape the chroot",
-            joined.contains("mount --bind /dev"),
+            joined.contains("mount --bind /dev $c/dev\n") || joined.endsWith("mount --bind /dev $c/dev"),
         )
         assertTrue(joined.contains("mount -t tmpfs"))
         assertTrue(joined.contains("$c/dev"))
@@ -60,8 +60,10 @@ class DevModeTest {
     }
 
     @Test
-    fun `private dev points ptmx at the devpts instance`() {
-        assertTrue(cmds(DevMode.PRIVATE).joinToString("\n").contains("ln -s pts/ptmx $c/dev/ptmx"))
+    fun `private dev gets a real ptmx node, since android's pts ptmx is mode 000`() {
+        val joined = cmds(DevMode.PRIVATE).joinToString("\n")
+        assertTrue(joined.contains("mknod -m 666 $c/dev/ptmx c 5 2"))
+        assertTrue(!joined.contains("ln -s pts/ptmx"))
     }
 
     @Test
@@ -79,6 +81,15 @@ class DevModeTest {
             val mkdirShm = list.indexOfLast { it.contains("mkdir") && it.contains("$c/dev/shm") }
             assertTrue("$mode: nothing mounted over dev", over >= 0)
             assertTrue("$mode: dev/shm must be created after that mount", mkdirShm > over)
+        }
+    }
+
+    @Test
+    fun `both modes share android's devpts so the terminal's pty exists inside`() {
+        DevMode.entries.forEach { mode ->
+            val joined = cmds(mode).joinToString("\n")
+            assertTrue("$mode", joined.contains("mount --bind /dev/pts $c/dev/pts"))
+            assertTrue("$mode", !joined.contains("mount -t devpts"))
         }
     }
 }

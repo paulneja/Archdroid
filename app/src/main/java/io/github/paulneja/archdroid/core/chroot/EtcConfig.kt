@@ -18,4 +18,14 @@ object EtcConfig {
 
     fun hostnameCommands(chrootDir: String, hostname: String): List<String> =
         listOf("echo ${quote(hostname)} > ${quote("$chrootDir/etc/hostname")}")
+
+    /** Follows Android's time zone so the chroot does not run in UTC. */
+    fun localtimeCommands(chrootDir: String): List<String> {
+        val zoneinfo = quote("$chrootDir/usr/share/zoneinfo")
+        return listOf(
+            "tz=$(getprop persist.sys.timezone); " +
+                "[ -n \"${'$'}tz\" ] && [ -e $zoneinfo/\"${'$'}tz\" ] && " +
+                "ln -sf \"/usr/share/zoneinfo/${'$'}tz\" ${quote("$chrootDir/etc/localtime")}; true"
+        )
+    }
 }

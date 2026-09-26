@@ -57,4 +57,34 @@ class ChrootHealthTest {
             ChrootHealth.missingFrom(listOf("", "  ", "$c/bin/bash")),
         )
     }
+
+    @Test
+    fun `the probe reports a login user missing from passwd`() {
+        val script = ChrootHealth.userProbe(c, "arch")
+        assertTrue(script.contains("grep -q '^arch:' '$c/etc/passwd'"))
+        assertTrue(script.contains("|| echo 'user:arch'"))
+    }
+
+    private val passwd = listOf(
+        "root:x:0:0::/root:/usr/bin/bash",
+        "nobody:x:65534:65534:Kernel Overflow User:/:/usr/bin/nologin",
+        "alarm:x:1000:1000::/home/alarm:/bin/bash",
+        "paulneja:x:1001:1001::/home/paulneja:/bin/bash",
+        "git:x:968:968:git daemon user:/:/usr/bin/git-shell",
+    )
+
+    @Test
+    fun `adopts the human account the installer created, not the image default`() {
+        assertEquals("paulneja", ChrootHealth.existingLoginUser(passwd))
+    }
+
+    @Test
+    fun `falls back to alarm only when it is the sole human account`() {
+        assertEquals("alarm", ChrootHealth.existingLoginUser(passwd.filterNot { it.startsWith("paulneja") }))
+    }
+
+    @Test
+    fun `ignores system and nologin accounts`() {
+        assertEquals(null, ChrootHealth.existingLoginUser(listOf(passwd[0], passwd[1], passwd[4])))
+    }
 }

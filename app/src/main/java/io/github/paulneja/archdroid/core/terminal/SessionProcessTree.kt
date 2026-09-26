@@ -57,7 +57,8 @@ object SessionProcessTree {
             }
             .map { it.pid }
 
-    fun script(leader: ProcessIdentity): String {
+    /** Shell functions that list the verified members of the leader's POSIX session. */
+    private fun membersPrelude(leader: ProcessIdentity): String {
         require(leader.pid == leader.sessionId) { "terminal process must lead its POSIX session" }
         val d = '$'
         return """
@@ -86,6 +87,12 @@ object SessionProcessTree {
                 printf '%s:%s\n' "$d{pid}" "$d{start}"
               done
             }
+        """.trimIndent()
+    }
+
+    fun script(leader: ProcessIdentity): String {
+        val d = '$'
+        return membersPrelude(leader) + "\n" + """
             signal_one() {
               signal=$d{1}; member=$d{2}; pid=$d{member%%:*}; start=$d{member#*:}
               read_member "$d{pid}" "$d{start}" || return 0
@@ -100,6 +107,24 @@ object SessionProcessTree {
             kill_members
             :
         """.trimIndent()
+    }
+
+    /** Sets oom_score_adj on every current member; processes forked later inherit it. */
+    fun oomScript(leader: ProcessIdentity, score: Int): String {
+        require(score in -1000..1000) { "oom_score_adj must be within -1000..1000" }
+        val d = '$'
+        return membersPrelude(leader) + "\n" + """
+            for member in $d(session_members); do
+              pid=$d{member%%:*}; start=$d{member#*:}
+              read_member "$d{pid}" "$d{start}" && echo $score > /proc/$d{pid}/oom_score_adj 2>/dev/null
+            done
+            :
+        """.trimIndent()
+    }
+
+    suspend fun setOomScore(identity: ProcessIdentity, score: Int): Result<Unit> = runCatching {
+        val result = RootManager.execScript(oomScript(identity, score))
+        if (!result.isSuccess) error(result.err.joinToString("\n").ifBlank { "oom_score_adj failed" })
     }
 
     suspend fun terminate(identity: ProcessIdentity): Result<Unit> = runCatching {

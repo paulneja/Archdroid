@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Only ArchDroid (and root, which holds every permission) may drive the embedded X server. -->
+    <permission
+        android:name="${applicationId}.permission.X11"
+        android:protectionLevel="signature" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -7,18 +13,23 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:name=".ArchDroidApp"
+        tools:replace="android:name,android:allowBackup"
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
         android:theme="@style/Theme.ArchDroid"
-        android:extractNativeLibs="true"
         android:supportsRtl="true"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/full_backup_content"
-        android:networkSecurityConfig="@xml/network_security_config">
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:localeConfig="@xml/locales_config"
+        tools:targetApi="33">
 
         <activity
             android:name=".MainActivity"
@@ -36,6 +47,15 @@
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
+        <service
+            android:name=".core.service.SessionService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps user-started Linux terminal and desktop sessions running" />
+        </service>
+
         <receiver
             android:name=".core.boot.BootReceiver"
             android:enabled="true"
@@ -44,6 +64,40 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <activity
+            android:name=".ui.desktop.VncActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
+            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Embedded Termux:X11: the desktop opens from ArchDroid, never as a second launcher entry. -->
+        <activity
+            android:name="com.termux.x11.MainActivity"
+            android:label="@string/nav_desktop"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher"
+            android:exported="false"
+            tools:replace="android:label,android:icon,android:roundIcon,android:exported">
+            <intent-filter tools:node="removeAll" />
+            <meta-data android:name="android.app.shortcuts" tools:node="remove" />
+        </activity>
+        <activity
+            android:name="com.termux.x11.LoriePreferences"
+            android:exported="false"
+            tools:replace="android:exported">
+            <intent-filter tools:node="removeAll" />
+        </activity>
+        <!-- Registered at runtime by ArchDroidApp instead; see registerX11Receiver. -->
+        <receiver
+            android:name="com.termux.x11.LorieApp$Receiver"
+            tools:node="remove" />
+        <receiver
+            android:name="com.termux.x11.LoriePreferences$Receiver"
+            android:permission="${applicationId}.permission.X11"
+            tools:ignore="SystemPermissionTypo"
+            tools:replace="android:permission" />
     </application>
 
 </manifest>

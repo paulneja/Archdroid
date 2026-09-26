@@ -9,12 +9,14 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -24,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kyant.backdrop.Backdrop
 import io.github.paulneja.archdroid.R
+import io.github.paulneja.archdroid.core.chroot.MountPlan
 import io.github.paulneja.archdroid.data.model.DevMode
 import io.github.paulneja.archdroid.ui.components.GlassCard
 import kotlin.math.roundToInt
@@ -37,10 +40,12 @@ fun MountsScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val mounts = settings.mounts
     val active by viewModel.activeMounts.collectAsStateWithLifecycle()
+    val applyError by viewModel.applyError.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) { viewModel.refreshMounts() }
 
     SettingsSubScreen(backdrop, stringResource(R.string.settings_mounts), onBack) {
+        applyError?.let { ApplyErrorCard(backdrop, it, viewModel::clearApplyError) }
         GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text(
@@ -115,15 +120,17 @@ fun MountsScreen(
             SwitchRow("/dev/pts", mounts.devPts, backdrop) { viewModel.updateMounts(mounts.copy(devPts = it)) }
             SwitchRow("/dev/shm (tmpfs)", mounts.shm, backdrop) { viewModel.updateMounts(mounts.copy(shm = it)) }
             if (mounts.shm) {
+                var shmDraft by remember(mounts.shmSizeMb) { mutableFloatStateOf(mounts.shmSizeMb.toFloat()) }
                 Text(
-                    text = stringResource(R.string.mounts_shm_size, mounts.shmSizeMb),
+                    text = stringResource(R.string.mounts_shm_size, shmDraft.roundToInt()),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Slider(
-                    value = mounts.shmSizeMb.toFloat(),
-                    onValueChange = {
-                        viewModel.updateMounts(mounts.copy(shmSizeMb = it.roundToInt().coerceIn(64, 2048)))
+                    value = shmDraft,
+                    onValueChange = { shmDraft = it },
+                    onValueChangeFinished = {
+                        viewModel.updateMounts(mounts.copy(shmSizeMb = shmDraft.roundToInt().coerceIn(64, 2048)))
                     },
                     valueRange = 64f..2048f,
                 )
@@ -143,22 +150,20 @@ fun MountsScreen(
                 backdrop,
             ) { viewModel.updateMounts(mounts.copy(bindSharedStorage = it)) }
             if (mounts.bindSharedStorage) {
-                OutlinedTextField(
+                DraftField(
                     value = mounts.sharedStorageSource,
-                    onValueChange = { viewModel.updateMounts(mounts.copy(sharedStorageSource = it)) },
-                    label = { Text(stringResource(R.string.mounts_shared_source)) },
-                    singleLine = true,
+                    label = stringResource(R.string.mounts_shared_source),
+                    onCommit = { viewModel.updateMounts(mounts.copy(sharedStorageSource = it)) },
+                    isValid = { MountPlan.validate(mounts.copy(bindSharedStorage = true, sharedStorageSource = it)).isEmpty() },
                     modifier = Modifier.fillMaxWidth(),
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
                 )
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
+                DraftField(
                     value = mounts.sharedStorageTarget,
-                    onValueChange = { viewModel.updateMounts(mounts.copy(sharedStorageTarget = it)) },
-                    label = { Text(stringResource(R.string.mounts_shared_target)) },
-                    singleLine = true,
+                    label = stringResource(R.string.mounts_shared_target),
+                    onCommit = { viewModel.updateMounts(mounts.copy(sharedStorageTarget = it)) },
+                    isValid = { MountPlan.validate(mounts.copy(bindSharedStorage = true, sharedStorageTarget = it)).isEmpty() },
                     modifier = Modifier.fillMaxWidth(),
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
                 )
                 Spacer(Modifier.height(4.dp))
                 SwitchRow(

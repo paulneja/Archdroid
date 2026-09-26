@@ -12,7 +12,9 @@ import io.github.paulneja.archdroid.data.model.AppSettings
 import io.github.paulneja.archdroid.data.model.BehaviorConfig
 import io.github.paulneja.archdroid.data.model.DevMode
 import io.github.paulneja.archdroid.data.model.EnvConfig
+import io.github.paulneja.archdroid.data.model.InitMode
 import io.github.paulneja.archdroid.data.model.MountConfig
+import io.github.paulneja.archdroid.data.model.ProtectionConfig
 import io.github.paulneja.archdroid.data.model.RootfsDownloadMode
 import io.github.paulneja.archdroid.data.model.UserConfig
 import kotlinx.coroutines.flow.Flow
@@ -58,8 +60,14 @@ class SettingsRepository(private val context: Context) {
         val LOGIN_AS_ROOT = booleanPreferencesKey("login_as_root")
 
         val AUTOSTART = booleanPreferencesKey("autostart_boot")
+        val TERMINAL_SURVIVAL = booleanPreferencesKey("terminal_survival")
         val STARTUP_SCRIPT = stringPreferencesKey("startup_script")
         val SHUTDOWN_SCRIPT = stringPreferencesKey("shutdown_script")
+
+        val OOM_ENABLED = booleanPreferencesKey("oom_enabled")
+        val OOM_SCORE = intPreferencesKey("oom_score")
+
+        val INIT_MODE = stringPreferencesKey("init_mode")
 
         val DOWNLOAD_MODE = stringPreferencesKey("download_mode")
         val LEGACY_MIRROR = stringPreferencesKey("mirror")
@@ -74,7 +82,7 @@ class SettingsRepository(private val context: Context) {
                 dev = p[Keys.MOUNT_DEV] ?: true,
                 devMode = p[Keys.DEV_MODE]?.let { name ->
                     DevMode.entries.firstOrNull { it.name == name }
-                } ?: DevMode.PRIVATE,
+                } ?: DevMode.BIND,
                 devPts = p[Keys.MOUNT_DEVPTS] ?: true,
                 shm = p[Keys.MOUNT_SHM] ?: true,
                 shmSizeMb = p[Keys.SHM_SIZE] ?: 256,
@@ -99,9 +107,17 @@ class SettingsRepository(private val context: Context) {
             ),
             behavior = BehaviorConfig(
                 autostartOnBoot = p[Keys.AUTOSTART] ?: false,
+                terminalSurvival = p[Keys.TERMINAL_SURVIVAL] ?: true,
                 startupScript = p[Keys.STARTUP_SCRIPT] ?: "",
                 shutdownScript = p[Keys.SHUTDOWN_SCRIPT] ?: "",
             ),
+            protection = ProtectionConfig(
+                oomEnabled = p[Keys.OOM_ENABLED] ?: false,
+                oomScore = (p[Keys.OOM_SCORE] ?: -900).coerceIn(-1000, -900),
+            ),
+            initMode = p[Keys.INIT_MODE]?.let { name ->
+                InitMode.entries.firstOrNull { it.name == name }
+            } ?: InitMode.COMPAT,
             downloadMode = DownloadModeSettings.decode(
                 p[Keys.DOWNLOAD_MODE],
                 p[Keys.LEGACY_MIRROR],
@@ -138,6 +154,9 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
+    /** False until a user name was stored, by the installer or in Settings. */
+    suspend fun hasChosenUser(): Boolean = context.dataStore.data.first().contains(Keys.USERNAME)
+
     suspend fun updateUser(u: UserConfig) {
         context.dataStore.edit { p ->
             p[Keys.USERNAME] = u.username
@@ -148,9 +167,21 @@ class SettingsRepository(private val context: Context) {
     suspend fun updateBehavior(b: BehaviorConfig) {
         context.dataStore.edit { p ->
             p[Keys.AUTOSTART] = b.autostartOnBoot
+            p[Keys.TERMINAL_SURVIVAL] = b.terminalSurvival
             p[Keys.STARTUP_SCRIPT] = b.startupScript
             p[Keys.SHUTDOWN_SCRIPT] = b.shutdownScript
         }
+    }
+
+    suspend fun updateProtection(c: ProtectionConfig) {
+        context.dataStore.edit { p ->
+            p[Keys.OOM_ENABLED] = c.oomEnabled
+            p[Keys.OOM_SCORE] = c.oomScore
+        }
+    }
+
+    suspend fun updateInitMode(mode: InitMode) {
+        context.dataStore.edit { it[Keys.INIT_MODE] = mode.name }
     }
 
     suspend fun updateDownloadMode(mode: RootfsDownloadMode) {

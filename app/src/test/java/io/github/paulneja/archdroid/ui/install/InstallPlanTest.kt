@@ -47,13 +47,18 @@ class InstallPlanTest {
 
     @Test
     fun `sudo is always installed even when logging in as root`() {
-        assertTrue(InstallPlan.packagesFor(emptySet(), loginAsRoot = true).contains("sudo"))
-        assertTrue(InstallPlan.packagesFor(setOf("git"), loginAsRoot = false).contains("sudo"))
+        assertTrue(InstallPlan.packagesFor(emptySet()).contains("sudo"))
+        assertTrue(InstallPlan.packagesFor(setOf("git")).contains("sudo"))
+    }
+
+    @Test
+    fun `compat init interpreter is installed without optional packages`() {
+        assertTrue(InstallPlan.packagesFor(emptySet()).contains("python"))
     }
 
     @Test
     fun `package list keeps the selection and never duplicates sudo`() {
-        val pkgs = InstallPlan.packagesFor(setOf("git", "sudo", "vim"), loginAsRoot = false)
+        val pkgs = InstallPlan.packagesFor(setOf("git", "sudo", "vim"))
         assertEquals(1, pkgs.count { it == "sudo" })
         assertTrue(pkgs.containsAll(listOf("git", "vim")))
     }
