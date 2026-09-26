@@ -44,8 +44,11 @@
     <string name="wizard_req_network">Wi-Fi connection recommended</string>
     <string name="wizard_next">Next</string>
     <string name="wizard_back">Back</string>
-    <string name="wizard_mirror_label">Mirror URL</string>
-    <string name="wizard_mirror_body">The rootfs tarball will be downloaded from this mirror. The default redirects to a nearby official mirror.</string>
+    <string name="wizard_mirror_body">Choose how to download the rootfs. Both options require and verify the official Arch Linux ARM signature.</string>
+    <string name="wizard_download_fast">Fast — HTTP</string>
+    <string name="wizard_download_fast_body">Uses the closest official mirror. Authenticity is protected by the pinned OpenPGP signature.</string>
+    <string name="wizard_download_secure">Secure transport — HTTPS</string>
+    <string name="wizard_download_secure_body">Uses a direct official TLS mirror. It may be slower and still verifies the same signature.</string>
     <string name="wizard_packages_body">Extra packages installed with pacman right after the base system.</string>
     <string name="wizard_username">Username</string>
     <string name="wizard_password">Password</string>
@@ -53,7 +56,7 @@
     <string name="wizard_login_as_root">Log in as root instead</string>
     <string name="wizard_install">Install</string>
     <string name="step_download">Downloading rootfs</string>
-    <string name="step_verify">Verifying checksum</string>
+    <string name="step_verify">Verifying rootfs signature</string>
     <string name="step_extract">Extracting rootfs</string>
     <string name="step_base_config">Configuring base system</string>
     <string name="step_user">Creating user</string>

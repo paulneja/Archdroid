@@ -3,6 +3,7 @@ package io.github.paulneja.archdroid.core.service
 import io.github.paulneja.archdroid.core.chroot.ChrootInstaller
 import io.github.paulneja.archdroid.data.model.EnvConfig
 import io.github.paulneja.archdroid.data.model.InstallConfig
+import io.github.paulneja.archdroid.data.model.RootfsDownloadMode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -19,7 +20,7 @@ import org.junit.Test
 class InstallCoordinatorTest {
 
     private val config = InstallConfig(
-        mirror = "https://example.invalid",
+        downloadMode = RootfsDownloadMode.FAST,
         packages = listOf("nano"),
         username = "arch",
         password = "secret",

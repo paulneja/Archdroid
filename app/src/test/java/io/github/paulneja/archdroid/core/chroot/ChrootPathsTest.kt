@@ -1,5 +1,6 @@
 package io.github.paulneja.archdroid.core.chroot
 
+import io.github.paulneja.archdroid.data.model.RootfsDownloadMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -7,35 +8,37 @@ import org.junit.Test
 
 class ChrootPathsTest {
     @Test
-    fun `the default mirror is not the host with the mismatched certificate over https`() {
-        assertFalse(
-            "https://os.archlinuxarm.org cannot pass hostname verification",
-            ChrootPaths.DEFAULT_MIRROR.startsWith("https://os."),
+    fun `fast mode uses the geo redirected http endpoint`() {
+        assertEquals(
+            "http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz",
+            ChrootPaths.rootfsUrl(RootfsDownloadMode.FAST),
+        )
+        assertEquals(
+            "https://fl.us.mirror.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz.sig",
+            ChrootPaths.signatureUrl(),
         )
     }
 
     @Test
-    fun `the default mirror points at the arch linux arm network`() {
-        assertTrue(ChrootPaths.DEFAULT_MIRROR.endsWith("archlinuxarm.org"))
-    }
-
-    @Test
-    fun `builds the rootfs and md5 urls`() {
+    fun `secure mode uses the direct official https mirror`() {
         assertEquals(
-            "http://example.org/os/ArchLinuxARM-aarch64-latest.tar.gz",
-            ChrootPaths.rootfsUrl("http://example.org"),
-        )
-        assertEquals(
-            "http://example.org/os/ArchLinuxARM-aarch64-latest.tar.gz.md5",
-            ChrootPaths.md5Url("http://example.org"),
+            "https://fl.us.mirror.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz",
+            ChrootPaths.rootfsUrl(RootfsDownloadMode.SECURE),
         )
     }
 
     @Test
-    fun `tolerates a trailing slash on the mirror`() {
-        assertEquals(
-            ChrootPaths.rootfsUrl("http://example.org"),
-            ChrootPaths.rootfsUrl("http://example.org/"),
-        )
+    fun `fast mode accepts only official http or https endpoints`() {
+        assertTrue(ChrootPaths.isAllowedEndpoint(RootfsDownloadMode.FAST, "http", "ca.us.mirror.archlinuxarm.org"))
+        assertTrue(ChrootPaths.isAllowedEndpoint(RootfsDownloadMode.FAST, "https", "archlinuxarm.org"))
+        assertFalse(ChrootPaths.isAllowedEndpoint(RootfsDownloadMode.FAST, "http", "archlinuxarm.org.evil.test"))
+        assertFalse(ChrootPaths.isAllowedEndpoint(RootfsDownloadMode.FAST, "ftp", "archlinuxarm.org"))
+    }
+
+    @Test
+    fun `secure mode rejects cleartext redirects and foreign hosts`() {
+        assertTrue(ChrootPaths.isAllowedEndpoint(RootfsDownloadMode.SECURE, "https", "fl.us.mirror.archlinuxarm.org"))
+        assertFalse(ChrootPaths.isAllowedEndpoint(RootfsDownloadMode.SECURE, "http", "fl.us.mirror.archlinuxarm.org"))
+        assertFalse(ChrootPaths.isAllowedEndpoint(RootfsDownloadMode.SECURE, "https", "example.org"))
     }
 }

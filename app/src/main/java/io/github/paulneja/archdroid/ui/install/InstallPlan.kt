@@ -1,5 +1,7 @@
 package io.github.paulneja.archdroid.ui.install
 
+import io.github.paulneja.archdroid.data.model.RootfsDownloadMode
+
 object InstallPlan {
 
     const val MIN_FREE_BYTES = 2_500_000_000L
@@ -13,6 +15,12 @@ object InstallPlan {
     )
 
     fun usernameValid(username: String): Boolean = USERNAME.matches(username)
+
+    fun loadedDownloadMode(
+        current: RootfsDownloadMode,
+        saved: RootfsDownloadMode,
+        userChanged: Boolean,
+    ): RootfsDownloadMode = if (userChanged) current else saved
 
     fun packagesFor(selected: Set<String>, loginAsRoot: Boolean): List<String> =
         (selected + "sudo").distinct()

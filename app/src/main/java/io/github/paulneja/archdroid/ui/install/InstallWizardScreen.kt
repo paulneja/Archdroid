@@ -52,6 +52,7 @@ import com.kyant.backdrop.Backdrop
 import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.core.chroot.ChrootInstaller
 import io.github.paulneja.archdroid.core.service.InstallState
+import io.github.paulneja.archdroid.data.model.RootfsDownloadMode
 import io.github.paulneja.archdroid.ui.components.GlassCard
 import io.github.paulneja.archdroid.ui.components.LiquidButton
 import io.github.paulneja.archdroid.ui.components.LiquidToggle
@@ -298,13 +299,36 @@ private fun MirrorPage(ui: InstallWizardViewModel.UiState, viewModel: InstallWiz
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(16.dp))
-        OutlinedTextField(
-            value = ui.mirror,
-            onValueChange = viewModel::setMirror,
-            label = { Text(stringResource(R.string.wizard_mirror_label)) },
-            singleLine = true,
+        FilterChip(
+            selected = ui.downloadMode == RootfsDownloadMode.FAST,
+            onClick = { viewModel.setDownloadMode(RootfsDownloadMode.FAST) },
+            label = {
+                Column(Modifier.padding(vertical = 8.dp)) {
+                    Text(stringResource(R.string.wizard_download_fast))
+                    Text(
+                        stringResource(R.string.wizard_download_fast_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
-            textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+        )
+        Spacer(Modifier.height(8.dp))
+        FilterChip(
+            selected = ui.downloadMode == RootfsDownloadMode.SECURE,
+            onClick = { viewModel.setDownloadMode(RootfsDownloadMode.SECURE) },
+            label = {
+                Column(Modifier.padding(vertical = 8.dp)) {
+                    Text(stringResource(R.string.wizard_download_secure))
+                    Text(
+                        stringResource(R.string.wizard_download_secure_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }

@@ -1,11 +1,13 @@
 package io.github.paulneja.archdroid.core.chroot
 
 import android.content.Context
+import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.core.root.RootManager
 import io.github.paulneja.archdroid.core.util.RootTar
 import io.github.paulneja.archdroid.core.util.ShellQuote.quote
 import io.github.paulneja.archdroid.data.model.InstallConfig
 import io.github.paulneja.archdroid.data.model.MountConfig
+import io.github.paulneja.archdroid.data.model.RootfsDownloadMode
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
@@ -13,9 +15,9 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import java.io.File
 import java.io.FileOutputStream
-import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
 class ChrootInstaller(private val context: Context) {
@@ -29,17 +31,23 @@ class ChrootInstaller(private val context: Context) {
         val totalBytes: Long = -1L,
     )
 
-    class InstallException(val step: Step, message: String) : Exception(message)
+    class InstallException(val step: Step, message: String, cause: Throwable? = null) :
+        Exception(message, cause)
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
-        .followRedirects(true)
+        .followRedirects(false)
+        .followSslRedirects(false)
         .build()
 
     private fun tarballFile(): File = File(context.filesDir, "rootfs.tar.gz")
 
     private fun partialFile(): File = File(context.filesDir, "rootfs.tar.gz.part")
+
+    private fun signatureFile(): File = File(context.filesDir, "rootfs.tar.gz.sig")
+
+    private fun verificationFile(): File = File(context.filesDir, "rootfs.verified")
 
     private fun checkpointFile(): File = File(context.filesDir, "install.checkpoint")
 
@@ -55,7 +63,7 @@ class ChrootInstaller(private val context: Context) {
                 saveCheckpoint(config, step)
                 when (step) {
                     Step.DOWNLOAD -> download(config, onProgress)
-                    Step.VERIFY -> verify(config, onProgress)
+                    Step.VERIFY -> verify(onProgress)
                     Step.EXTRACT -> extract(onProgress)
                     Step.BASE_CONFIG -> baseConfig(config, onProgress)
                     Step.USER -> createUser(config, onProgress)
@@ -78,60 +86,82 @@ class ChrootInstaller(private val context: Context) {
 
     private fun resumeStep(config: InstallConfig): Step {
         val lines = checkpointFile().takeIf(File::isFile)?.readLines().orEmpty()
-        val savedMirror = lines.getOrNull(0)
+        val savedMode = lines.getOrNull(0)
         val savedStep = lines.getOrNull(1)?.let { name ->
             Step.entries.firstOrNull { it.name == name }
         }
-        if (savedMirror != null && savedMirror != config.mirror) {
-            tarballFile().delete()
-            partialFile().delete()
+        if (savedMode != null && savedMode != config.downloadMode.name) {
+            discardUntrustedDownload()
             checkpointFile().delete()
             return Step.DOWNLOAD
         }
         if (savedStep != null && savedStep != Step.DOWNLOAD && !tarballFile().isFile) {
             return Step.DOWNLOAD
         }
+        if (savedStep != null && savedStep != Step.DOWNLOAD && !signatureFile().isFile) {
+            return Step.DOWNLOAD
+        }
+        if (savedStep != null && savedStep.ordinal > Step.VERIFY.ordinal && !verificationFile().isFile) {
+            return Step.VERIFY
+        }
         return savedStep ?: Step.DOWNLOAD
     }
 
     private fun saveCheckpoint(config: InstallConfig, step: Step) {
-        checkpointFile().writeText("${config.mirror}\n${step.name}\n")
+        checkpointFile().writeText("${config.downloadMode.name}\n${step.name}\n")
     }
 
     private var log: (String) -> Unit = {}
 
     private suspend fun download(config: InstallConfig, onProgress: (Progress) -> Unit) =
         withContext(Dispatchers.IO) {
-            val url = ChrootPaths.rootfsUrl(config.mirror)
-            val dest = tarballFile()
-            if (dest.isFile && dest.length() > 0) {
-                onProgress(Progress(Step.DOWNLOAD, url, dest.length(), dest.length()))
-                return@withContext
+            try {
+                val mode = config.downloadMode
+                val before = downloadSignature()
+                val url = ChrootPaths.rootfsUrl(mode)
+                val dest = tarballFile()
+                if (dest.isFile && dest.length() > 0) {
+                    RootfsSizeLimit.requireWithinLimit(dest.length())
+                    onProgress(Progress(Step.DOWNLOAD, url, dest.length(), dest.length()))
+                } else {
+                    val partial = partialFile()
+                    val initialBytes = if (partial.isFile) partial.length() else 0L
+                    DownloadRetry().run(
+                        initialBytes = initialBytes,
+                        currentBytes = { if (partial.isFile) partial.length() else 0L },
+                    ) { already ->
+                        downloadAttempt(mode, url, partial, already, onProgress)
+                    }.getOrThrow()
+                }
+                val after = downloadSignature()
+                signatureFile().writeBytes(RootfsSecurity.requireStableSignature(before, after))
+                verificationFile().delete()
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: RootfsVerificationException) {
+                discardUntrustedDownload()
+                throw InstallException(Step.VERIFY, failure.message.orEmpty(), failure)
+            } catch (failure: RootfsTooLargeException) {
+                discardUntrustedDownload()
+                throw InstallException(Step.DOWNLOAD, failure.message.orEmpty(), failure)
             }
-
-            val partial = partialFile()
-            val initialBytes = if (partial.isFile) partial.length() else 0L
-            DownloadRetry().run(
-                initialBytes = initialBytes,
-                currentBytes = { if (partial.isFile) partial.length() else 0L },
-            ) { already ->
-                downloadAttempt(url, partial, already, onProgress)
-            }.getOrThrow()
         }
 
     private suspend fun downloadAttempt(
+        mode: RootfsDownloadMode,
         url: String,
         partial: File,
         already: Long,
         onProgress: (Progress) -> Unit,
     ) {
+        RootfsSizeLimit.requireWithinLimit(already)
         onProgress(Progress(Step.DOWNLOAD, url, already, -1L))
 
         val request = Request.Builder().url(url).get()
             .apply { if (already > 0) header("Range", "bytes=$already-") }
             .build()
 
-        client.newCall(request).execute().use { response ->
+        executeFollowingAllowedRedirects(mode, request, Step.DOWNLOAD).use { response ->
             if (!response.isSuccessful) {
                 throw InstallException(Step.DOWNLOAD, "HTTP ${response.code} from $url")
             }
@@ -143,7 +173,7 @@ class ChrootInstaller(private val context: Context) {
             val base = if (resumed) already else 0L
             if (!resumed && already > 0) partial.delete()
 
-            val total = body.contentLength().let { if (it >= 0) it + base else -1L }
+            val total = RootfsSizeLimit.totalBytes(base, body.contentLength())
             var downloaded = base
             var lastReport = base
 
@@ -154,6 +184,7 @@ class ChrootInstaller(private val context: Context) {
                         currentCoroutineContext().ensureActive()
                         val read = input.read(buffer)
                         if (read < 0) break
+                        RootfsSizeLimit.requireWithinLimit(downloaded + read)
                         output.write(buffer, 0, read)
                         downloaded += read
                         if (downloaded - lastReport > 512 * 1024) {
@@ -172,38 +203,89 @@ class ChrootInstaller(private val context: Context) {
         }
     }
 
-    private suspend fun verify(config: InstallConfig, onProgress: (Progress) -> Unit) =
-        withContext(Dispatchers.IO) {
-            onProgress(Progress(Step.VERIFY))
-            val md5Url = ChrootPaths.md5Url(config.mirror)
-            val expected = runCatching {
-                client.newCall(Request.Builder().url(md5Url).get().build()).execute().use { r ->
-                    if (!r.isSuccessful) return@use null
-                    r.body?.string()?.trim()?.split(Regex("\\s+"))?.firstOrNull()
-                }
-            }.getOrNull()
-
-            val file = tarballFile()
-            val digest = MessageDigest.getInstance("MD5")
-            file.inputStream().buffered().use { input ->
-                val buffer = ByteArray(256 * 1024)
+    private fun downloadSignature(): ByteArray {
+        val url = ChrootPaths.signatureUrl()
+        val request = Request.Builder().url(url).get().build()
+        return executeFollowingAllowedRedirects(
+            RootfsDownloadMode.SECURE,
+            request,
+            Step.VERIFY,
+        ).use { response ->
+            if (!response.isSuccessful) {
+                throw InstallException(Step.VERIFY, "HTTP ${response.code} from $url")
+            }
+            val body = response.body
+                ?: throw InstallException(Step.VERIFY, "empty signature from $url")
+            if (body.contentLength() > MAX_SIGNATURE_BYTES) {
+                throw InstallException(Step.VERIFY, "rootfs signature is too large")
+            }
+            val bytes = body.byteStream().use { input ->
+                val output = java.io.ByteArrayOutputStream()
+                val buffer = ByteArray(4096)
                 while (true) {
-                    ensureActive()
                     val read = input.read(buffer)
                     if (read < 0) break
-                    digest.update(buffer, 0, read)
+                    if (output.size() + read > MAX_SIGNATURE_BYTES) {
+                        throw InstallException(Step.VERIFY, "rootfs signature is too large")
+                    }
+                    output.write(buffer, 0, read)
                 }
+                output.toByteArray()
             }
-            val actual = digest.digest().joinToString("") { "%02x".format(it) }
+            if (bytes.isEmpty()) throw InstallException(Step.VERIFY, "empty signature from $url")
+            bytes
+        }
+    }
 
-            if (expected != null && !expected.equals(actual, ignoreCase = true)) {
-                file.delete()
-                partialFile().delete()
-                throw InstallException(Step.VERIFY, "md5 mismatch: expected $expected got $actual")
+    private fun executeFollowingAllowedRedirects(
+        mode: RootfsDownloadMode,
+        initialRequest: Request,
+        step: Step,
+    ): Response {
+        var request = initialRequest
+        repeat(MAX_REDIRECTS + 1) { redirectCount ->
+            val url = request.url
+            if (!ChrootPaths.isAllowedEndpoint(mode, url.scheme, url.host)) {
+                throw InstallException(step, "refused download endpoint: $url")
+            }
+            val response = client.newCall(request).execute()
+            if (!response.isRedirect) return response
+            val location = response.header("Location")
+            val next = location?.let(url::resolve)
+            response.close()
+            if (next == null || redirectCount == MAX_REDIRECTS) {
+                throw InstallException(step, "invalid download redirect from $url")
+            }
+            if (!ChrootPaths.isAllowedEndpoint(mode, next.scheme, next.host)) {
+                throw InstallException(step, "refused download redirect: $next")
+            }
+            request = request.newBuilder().url(next).build()
+        }
+        throw InstallException(step, "too many download redirects")
+    }
+
+    private suspend fun verify(onProgress: (Progress) -> Unit) =
+        withContext(Dispatchers.IO) {
+            onProgress(Progress(Step.VERIFY))
+            try {
+                val verified = verifier().verify(tarballFile(), signatureFile().readBytes()) {
+                    ensureActive()
+                }
+                verificationFile().writeText(RootfsSecurity.encode(verified))
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Throwable) {
+                discardUntrustedDownload()
+                throw InstallException(
+                    Step.VERIFY,
+                    failure.message ?: "rootfs signature verification failed",
+                    failure,
+                )
             }
         }
 
     private suspend fun extract(onProgress: (Progress) -> Unit) {
+        verifyBeforeExtraction(onProgress)
         onProgress(Progress(Step.EXTRACT))
         val tarball = quote(tarballFile().absolutePath)
         val script = buildString {
@@ -217,6 +299,39 @@ class ChrootInstaller(private val context: Context) {
         if (!result.isSuccess) {
             throw InstallException(Step.EXTRACT, "tar failed: ${result.err.joinToString()}")
         }
+    }
+
+    private suspend fun verifyBeforeExtraction(onProgress: (Progress) -> Unit) =
+        withContext(Dispatchers.IO) {
+            onProgress(Progress(Step.VERIFY, "final signature check"))
+            try {
+                val expected = RootfsSecurity.decode(verificationFile().readText())
+                val actual = verifier().verify(tarballFile(), signatureFile().readBytes()) {
+                    ensureActive()
+                }
+                RootfsSecurity.requireUnchanged(expected, actual)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Throwable) {
+                discardUntrustedDownload()
+                throw InstallException(
+                    Step.VERIFY,
+                    failure.message ?: "final rootfs verification failed",
+                    failure,
+                )
+            }
+        }
+
+    private fun verifier(): RootfsVerifier = RootfsVerifier(
+        trustedKey = context.resources.openRawResource(R.raw.archlinuxarm_builder).use { it.readBytes() },
+        expectedFingerprint = TRUSTED_ROOTFS_FINGERPRINT,
+    )
+
+    private fun discardUntrustedDownload() {
+        tarballFile().delete()
+        partialFile().delete()
+        signatureFile().delete()
+        verificationFile().delete()
     }
 
     private suspend fun baseConfig(config: InstallConfig, onProgress: (Progress) -> Unit) {
@@ -283,6 +398,8 @@ class ChrootInstaller(private val context: Context) {
         onProgress(Progress(Step.CLEANUP))
         tarballFile().delete()
         partialFile().delete()
+        signatureFile().delete()
+        verificationFile().delete()
     }
 
     private suspend fun chrootBash(step: Step, command: String, failureLabel: String = command) {
@@ -296,6 +413,11 @@ class ChrootInstaller(private val context: Context) {
     }
 
     companion object {
+        private const val MAX_SIGNATURE_BYTES = 64 * 1024
+        private const val MAX_REDIRECTS = 5
+        private const val TRUSTED_ROOTFS_FINGERPRINT =
+            "68B3537F39A313B3E574D06777193F152BDBE6A6"
+
         fun commandFailure(label: String, stderr: List<String>): String =
             "$label -> ${stderr.joinToString()}"
     }

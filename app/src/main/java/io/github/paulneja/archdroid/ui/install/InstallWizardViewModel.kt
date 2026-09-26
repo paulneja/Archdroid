@@ -4,12 +4,12 @@ import android.app.Application
 import android.os.StatFs
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.paulneja.archdroid.core.chroot.ChrootPaths
 import io.github.paulneja.archdroid.core.root.RootManager
 import io.github.paulneja.archdroid.core.service.ArchDroidService
 import io.github.paulneja.archdroid.core.service.InstallState
 import io.github.paulneja.archdroid.data.model.EnvConfig
 import io.github.paulneja.archdroid.data.model.InstallConfig
+import io.github.paulneja.archdroid.data.model.RootfsDownloadMode
 import io.github.paulneja.archdroid.di.ServiceLocator
 import io.github.paulneja.archdroid.core.chroot.ChrootInstaller
 import kotlinx.coroutines.flow.combine
@@ -22,6 +22,8 @@ class InstallWizardViewModel(app: Application) : AndroidViewModel(app) {
 
     private val app = app
     private val coordinator = ServiceLocator.installCoordinator(app)
+    private val settings = ServiceLocator.settings(app)
+    private var downloadModeChanged = false
 
     companion object {
         val AVAILABLE_PACKAGES = InstallPlan.AVAILABLE_PACKAGES
@@ -30,7 +32,7 @@ class InstallWizardViewModel(app: Application) : AndroidViewModel(app) {
 
     data class UiState(
         val page: Int = 0,
-        val mirror: String = ChrootPaths.DEFAULT_MIRROR,
+        val downloadMode: RootfsDownloadMode = RootfsDownloadMode.FAST,
         val selectedPackages: Set<String> = setOf("git", "nano", "zsh", "fastfetch"),
         val username: String = "arch",
         val password: String = "",
@@ -61,13 +63,28 @@ class InstallWizardViewModel(app: Application) : AndroidViewModel(app) {
             val kernel = RootManager.outputOf("uname -r").firstOrNull().orEmpty()
             _ui.update { it.copy(freeBytes = stat.availableBytes, kernel = kernel) }
         }
+        viewModelScope.launch {
+            val savedMode = settings.current().downloadMode
+            _ui.update { current ->
+                current.copy(
+                    downloadMode = InstallPlan.loadedDownloadMode(
+                        current = current.downloadMode,
+                        saved = savedMode,
+                        userChanged = downloadModeChanged,
+                    ),
+                )
+            }
+        }
     }
 
     fun setPage(page: Int) = _ui.update { it.copy(page = page) }
     fun nextPage() = _ui.update { it.copy(page = it.page + 1) }
     fun prevPage() = _ui.update { it.copy(page = (it.page - 1).coerceAtLeast(0)) }
 
-    fun setMirror(mirror: String) = _ui.update { it.copy(mirror = mirror) }
+    fun setDownloadMode(mode: RootfsDownloadMode) {
+        downloadModeChanged = true
+        _ui.update { it.copy(downloadMode = mode) }
+    }
 
     fun togglePackage(pkg: String) = _ui.update {
         it.copy(
@@ -98,7 +115,7 @@ class InstallWizardViewModel(app: Application) : AndroidViewModel(app) {
         _ui.update { it.copy(page = 4, running = true, error = null, log = emptyList()) }
         coordinator.queue(
             InstallConfig(
-                mirror = s.mirror.trim().ifBlank { ChrootPaths.DEFAULT_MIRROR },
+                downloadMode = s.downloadMode,
                 packages = InstallPlan.packagesFor(s.selectedPackages, s.loginAsRoot),
                 username = if (s.loginAsRoot) "" else s.username.trim(),
                 password = s.password,

@@ -10,6 +10,8 @@ The project is currently built for `arm64-v8a` devices.
 
 - Guided Arch Linux ARM installation
 - Resumable root filesystem downloads
+- Fast HTTP and direct HTTPS download modes
+- Root filesystem verification with the pinned Arch Linux ARM OpenPGP key
 - Foreground progress notifications with pause, resume, cancel, and retry actions
 - Tabbed terminal with extra keys for common terminal controls
 - Configurable `/proc`, `/sys`, `/dev`, shared storage, and tmpfs mounts
@@ -58,13 +60,18 @@ support is built for ARM64 with Android NDK 28.
 ## First run
 
 1. Open ArchDroid and grant root access.
-2. Choose a mirror and configure the Linux user.
+2. Choose the fast HTTP or direct HTTPS download mode and configure the Linux user.
 3. Select any additional packages.
 4. Start the installation and keep the progress notification available.
 5. Open the terminal when installation finishes.
 
 Downloads can be paused or resumed without discarding the partial archive. A failed
 installation can retry from its last safe checkpoint.
+
+The root filesystem is accepted only when its detached signature matches the bundled
+Arch Linux ARM build key. The signature is fetched over HTTPS before and after the archive
+download, then checked again immediately before extraction. HTTP mode only affects the
+large archive transfer; signature verification is mandatory in both modes.
 
 ## Mount safety
 

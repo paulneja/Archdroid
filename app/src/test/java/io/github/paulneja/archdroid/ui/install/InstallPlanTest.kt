@@ -1,11 +1,32 @@
 package io.github.paulneja.archdroid.ui.install
 
+import io.github.paulneja.archdroid.data.model.RootfsDownloadMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class InstallPlanTest {
+    @Test
+    fun `loads the saved mode until the user changes it`() {
+        assertEquals(
+            RootfsDownloadMode.SECURE,
+            InstallPlan.loadedDownloadMode(
+                current = RootfsDownloadMode.FAST,
+                saved = RootfsDownloadMode.SECURE,
+                userChanged = false,
+            ),
+        )
+        assertEquals(
+            RootfsDownloadMode.FAST,
+            InstallPlan.loadedDownloadMode(
+                current = RootfsDownloadMode.FAST,
+                saved = RootfsDownloadMode.SECURE,
+                userChanged = true,
+            ),
+        )
+    }
+
 
     @Test
     fun `accepts a normal linux username`() {

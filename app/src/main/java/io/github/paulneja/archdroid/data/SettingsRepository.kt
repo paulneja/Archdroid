@@ -8,18 +8,29 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import io.github.paulneja.archdroid.core.chroot.ChrootPaths
 import io.github.paulneja.archdroid.data.model.AppSettings
 import io.github.paulneja.archdroid.data.model.BehaviorConfig
 import io.github.paulneja.archdroid.data.model.DevMode
 import io.github.paulneja.archdroid.data.model.EnvConfig
 import io.github.paulneja.archdroid.data.model.MountConfig
+import io.github.paulneja.archdroid.data.model.RootfsDownloadMode
 import io.github.paulneja.archdroid.data.model.UserConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore(name = "archdroid_settings")
+
+object DownloadModeSettings {
+    fun decode(savedMode: String?, legacyMirror: String?): RootfsDownloadMode =
+        savedMode?.let { saved ->
+            RootfsDownloadMode.entries.firstOrNull { it.name == saved }
+        } ?: if (legacyMirror?.startsWith("https://") == true) {
+            RootfsDownloadMode.SECURE
+        } else {
+            RootfsDownloadMode.FAST
+        }
+}
 
 @SuppressLint("SdCardPath")
 class SettingsRepository(private val context: Context) {
@@ -50,7 +61,8 @@ class SettingsRepository(private val context: Context) {
         val STARTUP_SCRIPT = stringPreferencesKey("startup_script")
         val SHUTDOWN_SCRIPT = stringPreferencesKey("shutdown_script")
 
-        val MIRROR = stringPreferencesKey("mirror")
+        val DOWNLOAD_MODE = stringPreferencesKey("download_mode")
+        val LEGACY_MIRROR = stringPreferencesKey("mirror")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
     }
 
@@ -90,7 +102,10 @@ class SettingsRepository(private val context: Context) {
                 startupScript = p[Keys.STARTUP_SCRIPT] ?: "",
                 shutdownScript = p[Keys.SHUTDOWN_SCRIPT] ?: "",
             ),
-            mirror = p[Keys.MIRROR] ?: ChrootPaths.DEFAULT_MIRROR,
+            downloadMode = DownloadModeSettings.decode(
+                p[Keys.DOWNLOAD_MODE],
+                p[Keys.LEGACY_MIRROR],
+            ),
             dynamicColor = p[Keys.DYNAMIC_COLOR] ?: true,
         )
     }
@@ -138,8 +153,8 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    suspend fun updateMirror(mirror: String) {
-        context.dataStore.edit { it[Keys.MIRROR] = mirror }
+    suspend fun updateDownloadMode(mode: RootfsDownloadMode) {
+        context.dataStore.edit { it[Keys.DOWNLOAD_MODE] = mode.name }
     }
 
     suspend fun updateDynamicColor(enabled: Boolean) {

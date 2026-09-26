@@ -50,7 +50,7 @@ object ServiceLocator {
                 installer.install(config, onProgress, onLog)
             },
             onSuccess = { config ->
-                settings.updateMirror(config.mirror)
+                settings.updateDownloadMode(config.downloadMode)
                 settings.updateUser(
                     UserConfig(
                         username = config.username.ifBlank { "root" },

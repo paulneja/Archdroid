@@ -42,8 +42,10 @@ data class BehaviorConfig(
     val shutdownScript: String = "",
 )
 
+enum class RootfsDownloadMode { FAST, SECURE }
+
 data class InstallConfig(
-    val mirror: String,
+    val downloadMode: RootfsDownloadMode,
     val packages: List<String>,
     val username: String,
     val password: String,
@@ -55,6 +57,6 @@ data class AppSettings(
     val env: EnvConfig = EnvConfig(),
     val user: UserConfig = UserConfig(),
     val behavior: BehaviorConfig = BehaviorConfig(),
-    val mirror: String = io.github.paulneja.archdroid.core.chroot.ChrootPaths.DEFAULT_MIRROR,
+    val downloadMode: RootfsDownloadMode = RootfsDownloadMode.FAST,
     val dynamicColor: Boolean = true,
 )

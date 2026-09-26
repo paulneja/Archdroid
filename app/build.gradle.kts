@@ -23,8 +23,8 @@ android {
         applicationId = "io.github.paulneja.archdroid"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.1.2"
 
         ndk { abiFilters += "arm64-v8a" }
     }
@@ -86,6 +86,8 @@ android {
     }
 
     packaging {
+        resources.pickFirsts += "META-INF/LICENSE.md"
+        resources.pickFirsts += "META-INF/NOTICE.md"
         jniLibs.useLegacyPackaging = true
         // Prefer the locally built 16 KB-aligned libtermux.so.
         jniLibs.pickFirsts += "**/libtermux.so"
@@ -122,6 +124,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.bouncycastle.openpgp)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
