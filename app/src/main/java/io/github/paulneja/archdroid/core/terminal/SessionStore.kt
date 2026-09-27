@@ -8,6 +8,7 @@ import com.termux.view.TerminalView
 import io.github.paulneja.archdroid.core.chroot.ChrootController
 import io.github.paulneja.archdroid.ui.terminal.TerminalTabState
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -82,7 +83,21 @@ class SessionStore(
 
     /** Mounts and opens the first shell the first time the terminal is shown. */
     fun ensureStarted(onFirstSession: () -> Unit = {}) {
-        if (_tabs.value.isNotEmpty() || starting) return
+        if (_tabs.value.isNotEmpty()) return
+        startSession(onFirstSession)
+    }
+
+    fun createSession() {
+        if (starting) return
+        if (_tabs.value.isEmpty()) {
+            startSession()
+        } else {
+            createPreparedSession()
+        }
+    }
+
+    private fun startSession(onSessionCreated: () -> Unit = {}) {
+        if (starting) return
         starting = true
         _preparing.value = true
         _error.value = null
@@ -91,7 +106,9 @@ class SessionStore(
             try {
                 val result = chroot.prepareSession()
                 if (!result.ok) {
-                    _error.value = result.log.joinToString("\n")
+                    _error.value = result.log.joinToString("\n").ifBlank {
+                        "could not prepare the terminal session"
+                    }
                     return@launch
                 }
                 // Avoid spawning a session that cannot enter the rootfs.
@@ -99,9 +116,13 @@ class SessionStore(
                 if (missing.isNotEmpty()) {
                     _broken.value = missing
                 } else {
-                    createSession()
-                    onFirstSession()
+                    createPreparedSession()
+                    onSessionCreated()
                 }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Exception) {
+                _error.value = failure.message ?: failure.toString()
             } finally {
                 _preparing.value = false
                 starting = false
@@ -109,7 +130,7 @@ class SessionStore(
         }
     }
 
-    fun createSession() {
+    private fun createPreparedSession() {
         val session = TerminalSessionFactory.create(
             ArchTerminalSessionClient(
                 context = context,

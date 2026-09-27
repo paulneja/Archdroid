@@ -64,7 +64,10 @@ class ChrootController(
         adoptExistingUser()
         val cfg = settings.current()
         val migrated = RootManager.execScript(UserSetup.migrateLegacyUsersScript(ChrootPaths.CHROOT_DIR))
-        if (!migrated.isSuccess) return MountManager.MountResult(false, migrated.out + migrated.err)
+        if (!migrated.isSuccess) return MountManager.MountResult(
+            false,
+            (migrated.out + migrated.err).ifEmpty { listOf("User migration failed (exit ${migrated.code})") },
+        )
         writeEnterScript(cfg)
         applyEnv(cfg.env)
         val result = MountManager.ensureMounted(cfg.mounts)

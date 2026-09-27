@@ -40,15 +40,19 @@ class ArchTerminalViewClient(
         view.isFocusable = true
         view.isFocusableInTouchMode = true
         view.requestFocus()
-        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.showSoftInput(view, 0)
+        view.post {
+            if (viewProvider() === view && view.isAttachedToWindow && view.hasFocus()) {
+                val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+            }
+        }
     }
 
     fun toggleKeyboard() {
         val view = viewProvider() ?: return
-        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
         view.requestFocus()
+        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.toggleSoftInput(InputMethodManager.SHOW_IMPLICIT, 0)
     }
 
     override fun shouldBackButtonBeMappedToEscape(): Boolean = false

@@ -22,6 +22,7 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
 
     @SuppressLint("StaticFieldLeak") // Cleared in detachView when the AndroidView is released.
     private var viewRef: TerminalView? = null
+    private var keyboardRequested = false
     val viewClient = ArchTerminalViewClient(app, { viewRef }, modifierState)
 
     /** Index of a protected tab waiting for the user to confirm its closing. */
@@ -36,11 +37,11 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun onShown() {
+        keyboardRequested = true
         if (store.tabs.value.isEmpty()) {
-            store.ensureStarted(onFirstSession = { viewClient.showKeyboard() })
+            store.ensureStarted(onFirstSession = ::showRequestedKeyboard)
         } else {
-            // Wait for the view to be attached and focusable again.
-            viewRef?.post { viewClient.showKeyboard() }
+            showRequestedKeyboard()
         }
     }
 
@@ -48,11 +49,23 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
         viewRef = view
         view.setTerminalViewClient(viewClient)
         store.attachView(view)
+        showRequestedKeyboard()
     }
 
     fun detachView() {
         viewRef?.let(store::detachView)
         viewRef = null
+    }
+
+    private fun showRequestedKeyboard() {
+        val view = viewRef ?: return
+        if (!keyboardRequested || store.activeTab() == null) return
+        view.post {
+            if (viewRef === view && keyboardRequested && store.activeTab() != null) {
+                keyboardRequested = false
+                viewClient.showKeyboard()
+            }
+        }
     }
 
     fun requestClose(index: Int) {

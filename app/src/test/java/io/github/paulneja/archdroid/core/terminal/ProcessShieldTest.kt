@@ -11,7 +11,8 @@ class ProcessShieldTest {
     fun `the running shell moves itself so its children inherit the cgroup`() {
         val cmds = ProcessShield.escapeSelfCommands().joinToString("\n")
         assertTrue(cmds.contains("mkdir -p /sys/fs/cgroup/archdroid"))
-        assertTrue(cmds.contains("echo \$\$ > /sys/fs/cgroup/archdroid/cgroup.procs"))
+        assertTrue(cmds.contains("read archdroid_pid _ < /proc/self/stat"))
+        assertTrue(cmds.contains("echo \$archdroid_pid > /sys/fs/cgroup/archdroid/cgroup.procs"))
     }
 
     @Test

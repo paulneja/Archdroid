@@ -11,7 +11,8 @@ object ProcessShield {
     /** For the first lines of a script, so everything it starts inherits the escape. */
     fun escapeSelfCommands(): List<String> = listOf(
         "mkdir -p $CGROUP 2>/dev/null",
-        "echo \$\$ > $CGROUP/cgroup.procs 2>/dev/null || true",
+        "read archdroid_pid _ < /proc/self/stat",
+        "echo \$archdroid_pid > $CGROUP/cgroup.procs 2>/dev/null || true",
     )
 
     fun escapePidCommand(pid: Int): String {

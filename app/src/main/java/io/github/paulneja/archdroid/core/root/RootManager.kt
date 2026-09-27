@@ -22,7 +22,7 @@ object RootManager {
     }
 
     suspend fun execScript(script: String): Shell.Result = withContext(Dispatchers.IO) {
-        Shell.cmd(script).to(ArrayList(), ArrayList()).exec()
+        Shell.cmd(RootScript.command(script)).to(ArrayList(), ArrayList()).exec()
     }
 
     suspend fun execStreaming(
@@ -34,7 +34,7 @@ object RootManager {
                 line?.let(onLine)
             }
         }
-        Shell.cmd(script).to(sink, sink).exec()
+        Shell.cmd(RootScript.command(script)).to(sink, sink).exec()
     }
 
     /** Own shell, so long jobs do not block the shared one. */
@@ -49,7 +49,7 @@ object RootManager {
                     line?.let(onLine)
                 }
             }
-            shell.newJob().add(script).to(sink, sink).exec()
+            shell.newJob().add(RootScript.command(script)).to(sink, sink).exec()
         } finally {
             shell.close()
         }
