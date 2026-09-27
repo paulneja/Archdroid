@@ -43,6 +43,7 @@ import androidx.compose.material.icons.rounded.DesktopWindows
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import io.github.paulneja.archdroid.ui.home.HomeScreen
+import io.github.paulneja.archdroid.ui.home.HomeDock
 import io.github.paulneja.archdroid.ui.install.InstallWizardScreen
 import io.github.paulneja.archdroid.ui.onboarding.RootCheckScreen
 import io.github.paulneja.archdroid.ui.settings.AboutScreen
@@ -149,9 +150,11 @@ private fun MainScaffold(
                 ) { index ->
                     when (MainPage.entries[index]) {
                         MainPage.HOME -> HomeScreen(
-                            backdrop = backgroundBackdrop,
                             onOpenTerminal = { showPage(MainPage.TERMINAL) },
+                            onOpenDesktop = { showPage(MainPage.DESKTOP) },
+                            onOpenSettings = { showPage(MainPage.SETTINGS) },
                             onInstall = { navController.navigate(Routes.INSTALL) },
+                            visible = pagerState.settledPage == MainPage.HOME.ordinal,
                         )
                         MainPage.TERMINAL -> TerminalScreen(
                             visible = pagerState.settledPage == MainPage.TERMINAL.ordinal,
@@ -213,7 +216,15 @@ private fun MainScaffold(
                 .navigationBarsPadding()
                 .padding(start = 24.dp, end = 24.dp, bottom = 12.dp),
         ) {
-            LiquidBottomTabs(
+            if (currentPage == MainPage.HOME) HomeDock(
+                items = listOf(
+                    Icons.Rounded.Home to stringResource(R.string.nav_home),
+                    Icons.Rounded.Terminal to stringResource(R.string.nav_terminal),
+                    Icons.Rounded.DesktopWindows to stringResource(R.string.nav_desktop),
+                    Icons.Rounded.Settings to stringResource(R.string.nav_settings),
+                ),
+                onSelected = { showPage(MainPage.entries[it]) },
+            ) else LiquidBottomTabs(
                 items = listOf(
                     LiquidTabItem(Icons.Rounded.Home, stringResource(R.string.nav_home)),
                     LiquidTabItem(Icons.Rounded.Terminal, stringResource(R.string.nav_terminal)),

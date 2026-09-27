@@ -12,6 +12,15 @@
     <string name="retry">Retry</string>
 
     <string name="home_subtitle">Arch Linux ARM in a real chroot</string>
+    <string name="home_eyebrow">YOUR PERSONAL LINUX</string>
+    <string name="home_headline">Your system.\nNo limits.</string>
+    <string name="home_core_caption">A real Linux environment</string>
+    <string name="home_terminal_hint">Your shell. Direct access.</string>
+    <string name="home_desktop_hint">A full desktop, wherever you are.</string>
+    <string name="home_system">SYSTEM OVERVIEW</string>
+    <string name="home_mounts">Active mounts</string>
+    <string name="home_checking">Checking system</string>
+    <string name="home_dismiss">Dismiss</string>
     <string name="status_label">Status</string>
     <string name="status_mounted">Mounted</string>
     <string name="status_installed">Installed</string>
