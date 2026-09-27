@@ -96,6 +96,15 @@ to the main screen without changing the current mount state.
 
 ## Continuous builds and releases
 
+The nested desktop resize integration test uses a local Xvfb display and checks that
+only compositor windows follow host size changes and that the helper exits with its session:
+
+```bash
+python3 scripts/test-desktop-fit.py
+```
+
+It requires Python 3, libX11, Xvfb and xrandr on the build machine.
+
 Every push and pull request runs the unit tests and lint checks, then builds debug and
 signed release APKs. Both files are available from the workflow run artifacts for 14 days.
 

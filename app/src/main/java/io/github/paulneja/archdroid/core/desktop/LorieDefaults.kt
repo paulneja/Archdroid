@@ -15,6 +15,13 @@ object LorieDefaults {
     fun apply(context: Context) {
         val prefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
         prefs.edit {
+            // Adopt a display that follows rotation once, then preserve later user changes.
+            if (!prefs.getBoolean("archdroidFitDisplayV1", false)) {
+                putString("displayResolutionMode", "native")
+                putBoolean("fullscreen", true)
+                putBoolean("hideCutout", true)
+                putBoolean("archdroidFitDisplayV1", true)
+            }
             DEFAULTS.forEach { (key, value) ->
                 if (!prefs.contains(key)) when (value) {
                     is Boolean -> putBoolean(key, value)

@@ -130,6 +130,7 @@ class DesktopController(
     }
 
     fun show(engine: DisplayEngine = _state.value.runningEngine ?: DisplayEngine.X11_NATIVE) {
+        if (engine == DisplayEngine.X11_NATIVE) LorieDefaults.apply(context)
         val target = when (engine) {
             DisplayEngine.X11_NATIVE -> Intent().setClassName(context, "com.termux.x11.MainActivity")
             DisplayEngine.VNC -> Intent().setClassName(context, "io.github.paulneja.archdroid.ui.desktop.VncActivity")
@@ -154,11 +155,18 @@ class DesktopController(
 
     private suspend fun writeStartScript() {
         val file = File(context.filesDir, "desktop-start")
-        withContext(Dispatchers.IO) { file.writeText(DesktopScripts.startScript()) }
+        val fit = File(context.filesDir, "fit-nested.py")
+        withContext(Dispatchers.IO) {
+            file.writeText(DesktopScripts.startScript())
+            context.assets.open("desktop/fit-nested.py").use { input ->
+                fit.outputStream().use { input.copyTo(it) }
+            }
+        }
         val target = quote("$c${DesktopScripts.START_SCRIPT}")
         RootManager.exec(
             "mkdir -p ${quote("$c/usr/lib/archdroid")}",
             "cp ${quote(file.absolutePath)} $target",
+            "cp ${quote(fit.absolutePath)} ${quote("$c/usr/lib/archdroid/fit-nested.py")}",
             "chmod 755 $target",
         )
     }

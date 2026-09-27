@@ -53,6 +53,7 @@ object DesktopScripts {
         if [ "${'$'}session" = wayland ]; then
           # The compositor runs as a window inside the X display ArchDroid shows.
           export XDG_SESSION_TYPE=wayland WLR_BACKENDS=x11
+          python /usr/lib/archdroid/fit-nested.py "${'$'}${'$'}" &
           case "${'$'}de" in
             kde)  exec dbus-run-session startplasma-wayland ;;
             lxqt) exec dbus-run-session startlxqtwayland ;;
