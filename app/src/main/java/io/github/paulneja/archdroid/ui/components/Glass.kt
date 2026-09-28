@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -39,15 +40,16 @@ import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.shapes.Capsule
+import io.github.paulneja.archdroid.ui.theme.AppSurface
 import kotlin.math.roundToInt
 
-private val GlassTint = Color.White.copy(alpha = 0.08f)
+private val GlassTint = AppSurface.copy(alpha = 0.78f)
 
 @Composable
 fun GlassCard(
     backdrop: Backdrop,
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(28.dp),
+    shape: Shape = RoundedCornerShape(10.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
@@ -58,11 +60,11 @@ fun GlassCard(
                 effects = {
                     vibrancy()
                     blur(8f.dp.toPx())
-                    lens(16f.dp.toPx(), 24f.dp.toPx())
+                    lens(8f.dp.toPx(), 12f.dp.toPx())
                 },
                 onDrawSurface = { drawRect(GlassTint) },
             )
-            .padding(20.dp),
+            .padding(16.dp),
         content = content,
     )
 }
@@ -76,22 +78,26 @@ fun LiquidButton(
     enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
+    val shape = RoundedCornerShape(8.dp)
     Row(
         modifier = modifier
             .drawBackdrop(
                 backdrop = backdrop,
-                shape = { Capsule() },
+                shape = { shape },
                 effects = {
                     vibrancy()
                     blur(4f.dp.toPx())
                     lens(12f.dp.toPx(), 24f.dp.toPx())
                 },
-                onDrawSurface = { if (tint.isSpecified) drawRect(tint) },
+                onDrawSurface = {
+                    drawRect(AppSurface)
+                    if (tint.isSpecified) drawRect(tint, alpha = if (enabled) 1f else .3f)
+                },
             )
-            .clip(Capsule())
+            .clip(shape)
             .clickable(enabled = enabled, onClick = onClick)
-            .height(52.dp)
-            .padding(horizontal = 24.dp),
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
         content = content,

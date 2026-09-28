@@ -11,13 +11,7 @@
     <string name="root_required_body">Dale root a ArchDroid en Magisk, KernelSU o APatch.</string>
     <string name="retry">Reintentar</string>
 
-    <string name="home_subtitle">Arch Linux ARM en un chroot real</string>
-    <string name="home_eyebrow">TU LINUX PERSONAL</string>
-    <string name="home_headline">Tu sistema.\nSin límites.</string>
-    <string name="home_core_caption">Un entorno Linux real</string>
-    <string name="home_terminal_hint">Tu shell. Acceso directo.</string>
-    <string name="home_desktop_hint">Un escritorio completo, donde estés.</string>
-    <string name="home_system">ESTADO DEL SISTEMA</string>
+    <string name="home_system">Sistema</string>
     <string name="home_mounts">Montajes activos</string>
     <string name="home_checking">Comprobando sistema</string>
     <string name="home_dismiss">Cerrar</string>
@@ -112,7 +106,7 @@
     <string name="settings_behavior">Autoinicio y scripts</string>
     <string name="settings_backup">Backup y reset</string>
     <string name="settings_about">Acerca de</string>
-    <string name="settings_dynamic_color">Color dinámico (Material You)</string>
+    <string name="settings_dynamic_color">Color del fondo de pantalla</string>
 
     <string name="mounts_fs_title">Sistema de archivos</string>
     <string name="mounts_shm_size">Tamaño de /dev/shm: %1$d MB</string>

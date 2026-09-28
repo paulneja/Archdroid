@@ -55,10 +55,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.termux.view.TerminalView
 import io.github.paulneja.archdroid.R
+import io.github.paulneja.archdroid.ui.theme.AppBackground
+import io.github.paulneja.archdroid.ui.theme.AppRaised
+import io.github.paulneja.archdroid.ui.theme.AppInput
 
-private val TerminalBg = Color(0xFF0A0E14)
-private val BarBg = Color(0xFF141A24)
-private val KeyBg = Color(0xFF1F2836)
+private val TerminalBg = AppBackground
+private val BarBg = AppRaised
+private val KeyBg = AppInput
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

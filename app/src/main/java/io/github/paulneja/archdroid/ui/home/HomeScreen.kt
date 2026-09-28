@@ -15,7 +15,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -47,17 +46,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.core.chroot.ChrootPaths
 import io.github.paulneja.archdroid.core.chroot.ChrootStatus
+import io.github.paulneja.archdroid.ui.theme.*
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-private val Ink = Color(0xFF111113)
-private val Panel = Color(0xFF18181B)
-private val Raised = Color(0xFF202024)
-private val Line = Color(0xFF34343B)
-private val Paper = Color(0xFFF1F1F3)
-private val Muted = Color(0xFFA0A0AA)
-private val Accent = Color(0xFFE5C48C)
+private val Ink = AppBackground
+private val Panel = AppSurface
+private val Raised = AppRaised
+private val Line = AppBorder
+private val Paper = AppText
+private val Muted = AppMuted
 private val HomeShape = RoundedCornerShape(10.dp)
 
 @Composable
@@ -75,6 +74,7 @@ fun HomeScreen(
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val error by viewModel.mountError.collectAsStateWithLifecycle()
     val mounts by viewModel.activeMounts.collectAsStateWithLifecycle()
+    val Accent = MaterialTheme.colorScheme.primary
     val motion = rememberHomeMotion()
     val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsState()
     val animate = motion && visible && lifecycle.isAtLeast(Lifecycle.State.RESUMED)
@@ -93,7 +93,7 @@ fun HomeScreen(
 
     Box(Modifier.fillMaxSize().background(Ink)) {
         Column(
-            Modifier.fillMaxSize().verticalScroll(scroll).statusBarsPadding()
+            Modifier.fillMaxSize().statusBarsPadding().verticalScroll(scroll)
                 .padding(horizontal = 24.dp).padding(top = 12.dp, bottom = 132.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -111,17 +111,6 @@ fun HomeScreen(
                 enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 12 },
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text(stringResource(R.string.home_eyebrow), color = Muted, fontSize = 10.sp,
-                                letterSpacing = 2.sp, fontFamily = FontFamily.Monospace)
-                            Text(stringResource(R.string.home_headline), color = Paper,
-                                fontSize = 32.sp, lineHeight = 36.sp, letterSpacing = (-1.2).sp,
-                                fontWeight = FontWeight.Medium)
-                        }
-                        Text("ARM64", color = Muted, fontFamily = FontFamily.Monospace,
-                            fontSize = 10.sp, modifier = Modifier.padding(top = 2.dp))
-                    }
                     Box(Modifier.fillMaxWidth().height(168.dp).clip(HomeShape).background(Panel)) {
                         OrbitalCore(animate, Modifier.fillMaxSize()) { scroll.value * 0.0004f }
                         Row(Modifier.align(Alignment.TopStart).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -131,28 +120,24 @@ fun HomeScreen(
                         }
                         Row(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-                            Column {
-                                Text("ARCH LINUX", color = Paper, fontSize = 12.sp, letterSpacing = 1.6.sp)
-                                Text(stringResource(R.string.home_core_caption), color = Muted, fontSize = 10.sp)
-                            }
-                            Text("aarch64", color = Muted, fontFamily = FontFamily.Monospace, fontSize = 10.sp)
+                            Text("Arch Linux ARM", color = Paper, fontSize = 12.sp)
                         }
                     }
                     if (status == ChrootStatus.NOT_INSTALLED) {
                         Text(stringResource(R.string.not_installed_body), color = Muted, fontSize = 13.sp, lineHeight = 19.sp)
-                        HomeAction(stringResource(R.string.install_arch), stringResource(R.string.not_installed_title),
+                        HomeAction(stringResource(R.string.install_arch),
                             Icons.Rounded.Download, onInstall, primary = true)
                     } else {
-                        HomeAction(stringResource(R.string.nav_terminal), stringResource(R.string.home_terminal_hint),
+                        HomeAction(stringResource(R.string.nav_terminal),
                             Icons.Rounded.Terminal, onOpenTerminal, primary = true,
                             enabled = status != ChrootStatus.UNKNOWN && !busy)
-                        HomeAction(stringResource(R.string.nav_desktop), stringResource(R.string.home_desktop_hint),
+                        HomeAction(stringResource(R.string.nav_desktop),
                             Icons.Rounded.DesktopWindows, onOpenDesktop)
                     }
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                SectionHeader(stringResource(R.string.home_system), "01")
+                SectionHeader(stringResource(R.string.home_system))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Metric(stringResource(R.string.disk_label), disk, Modifier.weight(1f))
                     Metric(stringResource(R.string.home_mounts), mounts.size.toString(), Modifier.weight(1f))
@@ -205,28 +190,23 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeAction(title: String, subtitle: String, icon: ImageVector, onClick: () -> Unit,
+private fun HomeAction(title: String, icon: ImageVector, onClick: () -> Unit,
                        primary: Boolean = false, enabled: Boolean = true) {
-    Row(Modifier.fillMaxWidth().clip(HomeShape).background(if (primary) Accent else Raised)
+    Row(Modifier.fillMaxWidth().clip(HomeShape).background(if (primary) MaterialTheme.colorScheme.primary else Raised)
         .clickable(enabled = enabled, onClick = onClick).padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
         val foreground = if (primary) Ink else Paper
         Icon(icon, null, tint = foreground.copy(alpha = if (enabled) 1f else .4f), modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(16.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, color = foreground.copy(alpha = if (enabled) 1f else .4f), fontSize = 18.sp, fontWeight = FontWeight.Medium)
-            Text(subtitle, color = foreground.copy(alpha = .65f), fontSize = 11.sp, lineHeight = 15.sp)
-        }
+        Text(title, color = foreground.copy(alpha = if (enabled) 1f else .4f), fontSize = 16.sp,
+            fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
         Spacer(Modifier.width(8.dp))
         Icon(Icons.Rounded.ArrowOutward, null, tint = foreground, modifier = Modifier.size(20.dp))
     }
 }
 
 @Composable
-private fun SectionHeader(label: String, index: String) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, color = Muted, fontSize = 10.sp, letterSpacing = 1.8.sp)
-        Text(index, color = Muted, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
-    }
+private fun SectionHeader(label: String) {
+    Text(label, color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Medium)
 }
 
 @Composable
@@ -244,21 +224,6 @@ private fun Detail(label: String, value: String) {
         Text(label, color = Muted, fontSize = 12.sp)
         Text(value, color = Paper, fontSize = 12.sp, lineHeight = 17.sp, fontFamily = FontFamily.Monospace,
             modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
-    }
-}
-
-@Composable
-fun HomeDock(items: List<Pair<ImageVector, String>>, onSelected: (Int) -> Unit) {
-    Row(Modifier.fillMaxWidth().clip(HomeShape).background(Raised).border(.5.dp, Line, HomeShape).padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly) {
-        items.forEachIndexed { index, item ->
-            Column(Modifier.weight(1f).clip(HomeShape).clickable { onSelected(index) }.padding(vertical = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Icon(item.first, null, tint = if (index == 0) Paper else Muted, modifier = Modifier.size(20.dp))
-                Text(item.second, color = if (index == 0) Paper else Muted, fontSize = 9.sp, maxLines = 1)
-                Box(Modifier.width(12.dp).height(2.dp).background(if (index == 0) Accent else Color.Transparent))
-            }
-        }
     }
 }
 

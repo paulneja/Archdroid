@@ -71,6 +71,7 @@ import com.kyant.shapes.Capsule
 import io.github.paulneja.archdroid.ui.components.liquid.DampedDragAnimation
 import io.github.paulneja.archdroid.ui.components.liquid.InteractiveHighlight
 import io.github.paulneja.archdroid.ui.components.liquid.rememberGravityAngle
+import io.github.paulneja.archdroid.ui.theme.AppRaised
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign
@@ -92,7 +93,7 @@ fun LiquidBottomTabs(
     val tabsCount = items.size
     val accentColor = MaterialTheme.colorScheme.primary
     val contentColor = MaterialTheme.colorScheme.onSurface
-    val containerColor = Color(0xFF121212).copy(alpha = 0.4f)
+    val containerColor = AppRaised.copy(alpha = 0.55f)
     val tabsBackdrop = rememberLayerBackdrop()
     val onSelectedUpdated by rememberUpdatedState(onSelected)
     val lightAngle by rememberGravityAngle()

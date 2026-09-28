@@ -43,7 +43,6 @@ import androidx.compose.material.icons.rounded.DesktopWindows
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import io.github.paulneja.archdroid.ui.home.HomeScreen
-import io.github.paulneja.archdroid.ui.home.HomeDock
 import io.github.paulneja.archdroid.ui.install.InstallWizardScreen
 import io.github.paulneja.archdroid.ui.onboarding.RootCheckScreen
 import io.github.paulneja.archdroid.ui.settings.AboutScreen
@@ -128,9 +127,9 @@ private fun MainScaffold(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val currentPage = MainPage.entries[pagerState.currentPage]
-    // Terminal and desktop own the whole screen; their keys and pointer must not sit under the bar.
+    // The terminal keeps its keys and IME clear of the menu bar. Desktop viewers open separately.
     val barVisible = currentRoute == Routes.MAIN &&
-        (currentPage == MainPage.HOME || currentPage == MainPage.SETTINGS)
+        pagerState.targetPage != MainPage.TERMINAL.ordinal
 
     Box(Modifier.fillMaxSize()) {
         NavHost(
@@ -216,22 +215,14 @@ private fun MainScaffold(
                 .navigationBarsPadding()
                 .padding(start = 24.dp, end = 24.dp, bottom = 12.dp),
         ) {
-            if (currentPage == MainPage.HOME) HomeDock(
-                items = listOf(
-                    Icons.Rounded.Home to stringResource(R.string.nav_home),
-                    Icons.Rounded.Terminal to stringResource(R.string.nav_terminal),
-                    Icons.Rounded.DesktopWindows to stringResource(R.string.nav_desktop),
-                    Icons.Rounded.Settings to stringResource(R.string.nav_settings),
-                ),
-                onSelected = { showPage(MainPage.entries[it]) },
-            ) else LiquidBottomTabs(
+            LiquidBottomTabs(
                 items = listOf(
                     LiquidTabItem(Icons.Rounded.Home, stringResource(R.string.nav_home)),
                     LiquidTabItem(Icons.Rounded.Terminal, stringResource(R.string.nav_terminal)),
                     LiquidTabItem(Icons.Rounded.DesktopWindows, stringResource(R.string.nav_desktop)),
                     LiquidTabItem(Icons.Rounded.Settings, stringResource(R.string.nav_settings)),
                 ),
-                selectedIndex = pagerState.currentPage,
+                selectedIndex = pagerState.targetPage,
                 onSelected = { showPage(MainPage.entries[it]) },
                 backdrop = contentBackdrop,
             )

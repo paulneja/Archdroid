@@ -66,8 +66,8 @@ fun DesktopScreen(
             .fillMaxSize()
             .statusBarsPadding()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp)
-            .padding(top = 16.dp, bottom = 48.dp),
+            .padding(horizontal = 24.dp)
+            .padding(top = 16.dp, bottom = 120.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -216,6 +216,7 @@ private fun Choice(label: String, selected: Boolean, enabled: Boolean = true, on
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .clickable(enabled = enabled, onClick = onClick)
+            .heightIn(min = 48.dp)
             .padding(vertical = 8.dp, horizontal = 4.dp),
     ) {
         Icon(
@@ -240,6 +241,7 @@ private fun Check(label: String, checked: Boolean, onClick: () -> Unit) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
+            .heightIn(min = 48.dp)
             .padding(vertical = 8.dp, horizontal = 4.dp),
     ) {
         Icon(
