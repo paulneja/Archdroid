@@ -249,4 +249,6 @@
     <string name="terminal_missing_user">El usuario \"%1$s\" no existe. Cambialo en Ajustes → Usuario.</string>
     <string name="desktop_extra_keys">Teclas extra</string>
     <string name="desktop_extra_keys_hint">Tres dedos hacia abajo la alterna dentro del escritorio.</string>
+    <string name="home_active">Activo</string>
+    <string name="home_working">Preparando…</string>
 </resources>

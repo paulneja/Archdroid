@@ -247,4 +247,6 @@
     <string name="terminal_missing_user">User \"%1$s\" doesn\'t exist. Change it in Settings → User.</string>
     <string name="desktop_extra_keys">Extra keys</string>
     <string name="desktop_extra_keys_hint">Three-finger swipe down toggles it inside the desktop.</string>
+    <string name="home_active">Active</string>
+    <string name="home_working">Working…</string>
 </resources>

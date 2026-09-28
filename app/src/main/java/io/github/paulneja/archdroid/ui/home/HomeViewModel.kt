@@ -12,11 +12,50 @@ import io.github.paulneja.archdroid.di.ServiceLocator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.CancellationException
+import io.github.paulneja.archdroid.core.terminal.SessionActivity
 
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     val chroot: ChrootController = ServiceLocator.chroot(app)
     val status = chroot.status
+    private val sessions = ServiceLocator.sessionStore(app)
+    private val desktop = ServiceLocator.desktop(app)
+    val desktopState = desktop.state
+    val preparing = sessions.preparing
+    val tabs = sessions.tabs
+    val installState = ServiceLocator.installCoordinator(app).state
+    private val _terminalWorking = MutableStateFlow(false)
+    val terminalWorking = _terminalWorking.asStateFlow()
+
+    /** Home alone samples activity. No background timer or frame-by-frame root queries. */
+    suspend fun watchActivity() {
+        var sample = 0
+        while (currentCoroutineContext().isActive) {
+            try {
+                val leaders = sessions.tabs.value.mapNotNull { tab ->
+                    if (tab.processIdentity.isCompleted && !tab.closing.value) {
+                        tab.processIdentity.await().getOrNull()
+                    } else null
+                }
+                _terminalWorking.value = leaders.isNotEmpty() && SessionActivity.hasWork(
+                    leaders, RootManager.outputOfScript(SessionActivity.readScript(leaders)),
+                )
+                if (sample++ % 6 == 0 && !_busy.value && !sessions.preparing.value) {
+                    chroot.refresh()
+                    desktop.refresh()
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _terminalWorking.value = false
+            }
+            delay(1_000)
+        }
+    }
 
     private val _kernel = MutableStateFlow("—")
     val kernel = _kernel.asStateFlow()
