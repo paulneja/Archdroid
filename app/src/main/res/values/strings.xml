@@ -251,4 +251,12 @@
     <string name="home_working">Working…</string>
     <string name="terminal_smaller_text">Decrease text size</string>
     <string name="terminal_larger_text">Increase text size</string>
+    <string name="terminal_text_size">Text size</string>
+    <string name="terminal_reset_text">Default size</string>
+    <string name="home_desktop_options">Desktop options</string>
+    <string name="home_system_details">System details</string>
+    <string name="home_copy_path">Copy rootfs path</string>
+    <string name="home_unmounted">Unmounted</string>
+    <string name="home_unmount_title">Stop sessions and unmount?</string>
+    <string name="home_unmount_body">This closes the running terminal and desktop sessions.</string>
 </resources>

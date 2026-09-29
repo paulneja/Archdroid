@@ -253,4 +253,12 @@
     <string name="home_working">Preparando…</string>
     <string name="terminal_smaller_text">Reducir tamaño del texto</string>
     <string name="terminal_larger_text">Aumentar tamaño del texto</string>
+    <string name="terminal_text_size">Tamaño del texto</string>
+    <string name="terminal_reset_text">Tamaño predeterminado</string>
+    <string name="home_desktop_options">Opciones del escritorio</string>
+    <string name="home_system_details">Detalles del sistema</string>
+    <string name="home_copy_path">Copiar ruta del rootfs</string>
+    <string name="home_unmounted">Desmontado</string>
+    <string name="home_unmount_title">¿Cerrar sesiones y desmontar?</string>
+    <string name="home_unmount_body">Se cerrarán las sesiones de terminal y escritorio en ejecución.</string>
 </resources>

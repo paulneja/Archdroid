@@ -57,6 +57,11 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun newTerminal() = sessions.createSession()
+    fun resumeDesktop() = desktop.show()
+    private val _refreshing = MutableStateFlow(false)
+    val refreshing = _refreshing.asStateFlow()
+
     private val _kernel = MutableStateFlow("—")
     val kernel = _kernel.asStateFlow()
 
@@ -81,13 +86,19 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun refresh() {
+        if (_refreshing.value) return
+        _refreshing.value = true
         viewModelScope.launch {
-            chroot.refresh()
-            _activeMounts.value = MountManager.activeMounts()
-            _kernel.value = RootManager.outputOf("uname -r").firstOrNull() ?: "—"
-            _diskUsage.value = RootManager
-                .outputOf("du -xsh ${ChrootPaths.CHROOT_DIR} 2>/dev/null | cut -f1")
-                .firstOrNull() ?: "—"
+            try {
+                chroot.refresh()
+                _activeMounts.value = MountManager.activeMounts()
+                _kernel.value = RootManager.outputOf("uname -r").firstOrNull() ?: "—"
+                _diskUsage.value = RootManager
+                    .outputOf("du -xsh ${ChrootPaths.CHROOT_DIR} 2>/dev/null | cut -f1")
+                    .firstOrNull() ?: "—"
+            } finally {
+                _refreshing.value = false
+            }
         }
     }
 

@@ -101,6 +101,7 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     val textSize = viewClient.textSize
     fun decreaseTextSize() = viewClient.changeTextSize(-1)
     fun increaseTextSize() = viewClient.changeTextSize(1)
+    fun resetTextSize() = viewClient.changeTextSize(ArchTerminalViewClient.DEFAULT_TEXT_SIZE - textSize.value)
 
     fun showKeyboard() = viewClient.showKeyboard()
     fun toggleKeyboard() = viewClient.toggleKeyboard()

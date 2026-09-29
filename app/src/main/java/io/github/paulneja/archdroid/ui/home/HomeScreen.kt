@@ -30,6 +30,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -65,6 +68,7 @@ fun HomeScreen(
 ) {
     val status by viewModel.status.collectAsStateWithLifecycle()
     val kernel by viewModel.kernel.collectAsStateWithLifecycle()
+    val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
     val disk by viewModel.diskUsage.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val error by viewModel.mountError.collectAsStateWithLifecycle()
@@ -81,6 +85,22 @@ fun HomeScreen(
         error != null,
         desktop.running || (tabs.isNotEmpty() && terminalWorking),
     )
+    var detailsExpanded by rememberSaveable { mutableStateOf(false) }
+    var confirmUnmount by remember { mutableStateOf(false) }
+    val clipboard = LocalClipboardManager.current
+    val requestMount: () -> Unit = {
+        if (status == ChrootStatus.MOUNTED && (tabs.isNotEmpty() || desktop.running)) confirmUnmount = true
+        else viewModel.toggleMount()
+    }
+    if (confirmUnmount) {
+        AlertDialog(onDismissRequest = { confirmUnmount = false },
+            title = { Text(stringResource(R.string.home_unmount_title)) },
+            text = { Text(stringResource(R.string.home_unmount_body)) },
+            confirmButton = { TextButton(onClick = { confirmUnmount = false; viewModel.toggleMount() }) {
+                Text(stringResource(R.string.unmount_chroot))
+            } },
+            dismissButton = { TextButton(onClick = { confirmUnmount = false }) { Text(stringResource(R.string.cancel)) } })
+    }
     val Accent = MaterialTheme.colorScheme.primary
     val motion = rememberHomeMotion()
     val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsState()
@@ -100,7 +120,7 @@ fun HomeScreen(
         OrbitalState.ERROR -> R.string.mount_failed
         else -> when (status) {
             ChrootStatus.MOUNTED -> R.string.status_mounted
-            ChrootStatus.INSTALLED -> R.string.status_installed
+            ChrootStatus.INSTALLED -> R.string.home_unmounted
             ChrootStatus.NOT_INSTALLED -> R.string.status_not_installed
             ChrootStatus.UNKNOWN -> R.string.home_checking
         }
@@ -147,36 +167,61 @@ fun HomeScreen(
                         HomeAction(stringResource(R.string.install_arch),
                             Icons.Rounded.Download, onInstall, primary = true)
                     } else {
-                        HomeAction(stringResource(R.string.nav_terminal),
-                            Icons.Rounded.Terminal, onOpenTerminal, primary = true,
-                            enabled = status != ChrootStatus.UNKNOWN && !busy)
-                        HomeAction(stringResource(R.string.nav_desktop),
-                            Icons.Rounded.DesktopWindows, onOpenDesktop)
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            HomeLaunchTile(stringResource(R.string.nav_terminal), Icons.Rounded.Terminal,
+                                onOpenTerminal, Modifier.weight(1f),
+                                active = tabs.isNotEmpty(), enabled = status != ChrootStatus.UNKNOWN && !busy,
+                                actionIcon = Icons.Rounded.Add, actionLabel = stringResource(R.string.terminal_new_tab),
+                                onAction = { viewModel.newTerminal(); onOpenTerminal() })
+                            HomeLaunchTile(stringResource(R.string.nav_desktop), Icons.Rounded.DesktopWindows,
+                                { if (desktop.running) viewModel.resumeDesktop() else onOpenDesktop() }, Modifier.weight(1f),
+                                active = desktop.running, enabled = !desktop.starting && !busy,
+                                actionIcon = Icons.Rounded.Tune, actionLabel = stringResource(R.string.home_desktop_options),
+                                onAction = onOpenDesktop)
+                        }
                     }
                 }
             }
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                SectionHeader(stringResource(R.string.home_system))
+            if (status == ChrootStatus.INSTALLED || status == ChrootStatus.MOUNTED) {
+                Row(Modifier.fillMaxWidth().clip(HomeShape).background(Raised)
+                    .clickable(enabled = !busy && !preparing && !desktop.starting && !desktop.installing, onClick = requestMount)
+                    .padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(if (status == ChrootStatus.MOUNTED) Icons.Rounded.PowerSettingsNew else Icons.Rounded.PlayArrow,
+                        null, tint = Muted, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text(stringResource(if (status == ChrootStatus.MOUNTED) R.string.unmount_chroot else R.string.mount_chroot),
+                        color = if (busy) Muted else Paper, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    if (busy) CircularProgressIndicator(Modifier.size(16.dp), color = Accent, strokeWidth = 1.5.dp)
+                }
+            }
+            Column(Modifier.fillMaxWidth().clip(HomeShape).background(Panel).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.home_system), color = Paper, fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                    IconButton(onClick = viewModel::refresh, enabled = !refreshing, modifier = Modifier.size(48.dp)) {
+                        if (refreshing) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 1.5.dp, color = Muted)
+                        else Icon(Icons.Rounded.Refresh, stringResource(R.string.mounts_refresh), tint = Muted, modifier = Modifier.size(20.dp))
+                    }
+                    IconButton(onClick = { detailsExpanded = !detailsExpanded }, modifier = Modifier.size(48.dp)) {
+                        Icon(if (detailsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                            stringResource(R.string.home_system_details), tint = Muted, modifier = Modifier.size(20.dp))
+                    }
+                }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Metric(stringResource(R.string.disk_label), disk, Modifier.weight(1f))
                     Metric(stringResource(R.string.home_mounts), mounts.size.toString(), Modifier.weight(1f))
                 }
-                Detail(stringResource(R.string.kernel_label), kernel)
-                Detail(stringResource(R.string.path_label), ChrootPaths.CHROOT_DIR)
-                HorizontalDivider(color = Line.copy(alpha = .5f))
-                if (status == ChrootStatus.INSTALLED || status == ChrootStatus.MOUNTED) {
-                    Row(
-                        Modifier.fillMaxWidth().clip(HomeShape)
-                            .clickable(enabled = !busy, onClick = viewModel::toggleMount)
-                            .background(Raised).padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(if (status == ChrootStatus.MOUNTED) Icons.Rounded.PowerSettingsNew else Icons.Rounded.PlayArrow,
-                            null, tint = Muted, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(if (status == ChrootStatus.MOUNTED) R.string.unmount_chroot else R.string.mount_chroot),
-                            color = if (busy) Muted else Paper, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                        if (busy) CircularProgressIndicator(Modifier.size(16.dp), color = Accent, strokeWidth = 1.5.dp)
+                AnimatedVisibility(detailsExpanded, enter = fadeIn(tween(if (motion) 160 else 0)), exit = fadeOut(tween(if (motion) 120 else 0))) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        HorizontalDivider(color = Line.copy(alpha = .5f))
+                        Detail(stringResource(R.string.kernel_label), kernel)
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.weight(1f)) { Detail(stringResource(R.string.path_label), ChrootPaths.CHROOT_DIR) }
+                            IconButton(onClick = { clipboard.setText(AnnotatedString(ChrootPaths.CHROOT_DIR)) }) {
+                                Icon(Icons.Rounded.ContentCopy, stringResource(R.string.home_copy_path), tint = Muted, modifier = Modifier.size(18.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -224,15 +269,33 @@ private fun HomeAction(title: String, icon: ImageVector, onClick: () -> Unit,
 }
 
 @Composable
-private fun SectionHeader(label: String) {
-    Text(label, color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+private fun HomeLaunchTile(title: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier,
+                           active: Boolean, enabled: Boolean, actionIcon: ImageVector,
+                           actionLabel: String, onAction: () -> Unit) {
+    Column(modifier.clip(HomeShape).background(Raised).clickable(enabled = enabled, onClick = onClick)
+        .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, tint = if (active) MaterialTheme.colorScheme.primary else Muted,
+                modifier = Modifier.size(24.dp))
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = onAction, enabled = enabled) {
+                Icon(actionIcon, actionLabel, tint = Muted, modifier = Modifier.size(20.dp))
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, color = if (enabled) Paper else Muted, fontSize = 15.sp, fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f))
+            if (active) Icon(Icons.Rounded.ArrowOutward, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+        }
+    }
 }
 
 @Composable
 private fun Metric(label: String, value: String, modifier: Modifier) {
-    Column(modifier.clip(HomeShape).background(Panel).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(label, color = Muted, fontSize = 11.sp)
-        Text(value, color = Paper, fontSize = 24.sp, fontWeight = FontWeight.Medium,
+        Text(value, color = Paper, fontSize = 20.sp, fontWeight = FontWeight.Medium,
             fontFamily = FontFamily.Monospace, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }

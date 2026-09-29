@@ -25,6 +25,9 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.TextFields
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -47,9 +50,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.unit.sp
 import io.github.paulneja.archdroid.core.terminal.ArchTerminalViewClient
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -83,13 +83,14 @@ fun TerminalScreen(
     val closeError by store.closeError.collectAsStateWithLifecycle()
     val pendingProtectedClose by viewModel.pendingProtectedClose.collectAsStateWithLifecycle()
     var menuFor by remember { mutableStateOf<Int?>(null) }
+    var textMenu by remember { mutableStateOf(false) }
     val broken by store.broken.collectAsStateWithLifecycle()
     val ctrlActive by viewModel.ctrlActive.collectAsStateWithLifecycle()
     val altActive by viewModel.altActive.collectAsStateWithLifecycle()
     val shiftActive by viewModel.shiftActive.collectAsStateWithLifecycle()
 
     LaunchedEffect(visible) {
-        if (visible) viewModel.onShown()
+        if (visible) viewModel.onShown() else textMenu = false
     }
     LaunchedEffect(Unit) {
         store.allClosed.collect { onClose() }
@@ -215,19 +216,29 @@ fun TerminalScreen(
                     }
                 }
             }
-            Row(Modifier.clip(RoundedCornerShape(8.dp)).background(KeyBg)) {
-                val smaller = stringResource(R.string.terminal_smaller_text)
-                val larger = stringResource(R.string.terminal_larger_text)
-                IconButton(
-                    onClick = viewModel::decreaseTextSize,
-                    enabled = textSize > ArchTerminalViewClient.MIN_TEXT_SIZE,
-                    modifier = Modifier.semantics { contentDescription = smaller },
-                ) { Text("A−", fontSize = 16.sp, fontWeight = FontWeight.Medium) }
-                IconButton(
-                    onClick = viewModel::increaseTextSize,
-                    enabled = textSize < ArchTerminalViewClient.MAX_TEXT_SIZE,
-                    modifier = Modifier.semantics { contentDescription = larger },
-                ) { Text("A+", fontSize = 16.sp, fontWeight = FontWeight.Medium) }
+            Box {
+                IconButton(onClick = { textMenu = !textMenu }) {
+                    Icon(Icons.Rounded.TextFields, stringResource(R.string.terminal_text_size),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                }
+                DropdownMenu(expanded = textMenu, onDismissRequest = { textMenu = false }) {
+                    Text(stringResource(R.string.terminal_text_size), style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    Row(Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = viewModel::decreaseTextSize,
+                            enabled = textSize > ArchTerminalViewClient.MIN_TEXT_SIZE) {
+                            Icon(Icons.Rounded.Remove, stringResource(R.string.terminal_smaller_text))
+                        }
+                        Text(textSize.toString(), fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.widthIn(min = 40.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        IconButton(onClick = viewModel::increaseTextSize,
+                            enabled = textSize < ArchTerminalViewClient.MAX_TEXT_SIZE) {
+                            Icon(Icons.Rounded.Add, stringResource(R.string.terminal_larger_text))
+                        }
+                    }
+                    DropdownMenuItem(text = { Text(stringResource(R.string.terminal_reset_text)) },
+                        onClick = { viewModel.resetTextSize(); textMenu = false })
+                }
             }
             IconButton(onClick = { store.createSession() }) {
                 Icon(
