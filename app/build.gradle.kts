@@ -35,8 +35,8 @@ android {
         applicationId = rootProject.extra["archdroidApplicationId"] as String
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "0.3.3"
+        versionCode = 11
+        versionName = "0.3.4"
 
         ndk { abiFilters += "arm64-v8a" }
     }

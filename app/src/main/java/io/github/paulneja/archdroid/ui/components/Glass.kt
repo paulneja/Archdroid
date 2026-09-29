@@ -1,6 +1,7 @@
 package io.github.paulneja.archdroid.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -40,7 +41,11 @@ import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.shapes.Capsule
-import io.github.paulneja.archdroid.ui.theme.AppSurface
+import io.github.paulneja.archdroid.ui.theme.*
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import kotlin.math.roundToInt
 
 private val GlassTint = AppSurface.copy(alpha = 0.78f)
@@ -53,8 +58,8 @@ fun GlassCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier = modifier
-            .drawBackdrop(
+        modifier = modifier.panelEntrance()
+            .then(if (LocalPerformanceMode.current) Modifier.background(AppSurface, shape) else Modifier.drawBackdrop(
                 backdrop = backdrop,
                 shape = { shape },
                 effects = {
@@ -63,7 +68,7 @@ fun GlassCard(
                     lens(8f.dp.toPx(), 12f.dp.toPx())
                 },
                 onDrawSurface = { drawRect(GlassTint) },
-            )
+            ))
             .padding(16.dp),
         content = content,
     )
@@ -79,9 +84,10 @@ fun LiquidButton(
     content: @Composable RowScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(8.dp)
+    val interaction = remember { MutableInteractionSource() }
     Row(
-        modifier = modifier
-            .drawBackdrop(
+        modifier = modifier.pressMotion(interaction)
+            .then(if (LocalPerformanceMode.current) Modifier.background(if (tint.isSpecified) tint else AppSurface, shape) else Modifier.drawBackdrop(
                 backdrop = backdrop,
                 shape = { shape },
                 effects = {
@@ -93,9 +99,9 @@ fun LiquidButton(
                     drawRect(AppSurface)
                     if (tint.isSpecified) drawRect(tint, alpha = if (enabled) 1f else .3f)
                 },
-            )
+            ))
             .clip(shape)
-            .clickable(enabled = enabled, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
             .heightIn(min = 48.dp)
             .padding(horizontal = 20.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.Center,
@@ -114,6 +120,17 @@ fun LiquidToggle(
     enabled: Boolean = true,
 ) {
     val accent = MaterialTheme.colorScheme.primary
+    if (LocalPerformanceMode.current || !LocalAppMotion.current) {
+        Box(modifier.width(56.dp).height(32.dp).clip(Capsule())
+            .background(if (checked) accent.copy(alpha = .35f) else AppInput)
+            .semantics { toggleableState = if (checked) ToggleableState.On else ToggleableState.Off }
+            .clickable(enabled = enabled, role = Role.Switch) { onCheckedChange(!checked) },
+            contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart) {
+            Box(Modifier.padding(4.dp).width(24.dp).height(24.dp)
+                .background(if (checked) accent else AppMuted, Capsule()))
+        }
+        return
+    }
     val trackTint = if (checked) accent.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.06f)
     val offset by animateFloatAsState(
         targetValue = if (checked) 1f else 0f,

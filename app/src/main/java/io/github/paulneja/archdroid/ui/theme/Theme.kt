@@ -12,6 +12,12 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.expressiveLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.LocalRippleConfiguration
+import androidx.compose.material3.RippleConfiguration
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.graphics.Color
+import io.github.paulneja.archdroid.data.model.VisualStyle
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -33,11 +39,13 @@ private val AppTypography = Typography(
     labelSmall = TextStyle(fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium),
 )
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ArchDroidTheme(
     darkTheme: Boolean = true,
     dynamicColor: Boolean = true,
+    visualStyle: VisualStyle = VisualStyle.CHROME,
+    performanceMode: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val base = when {
@@ -48,7 +56,12 @@ fun ArchDroidTheme(
         darkTheme -> darkColorScheme(primary = AppAccent)
         else -> expressiveLightColorScheme()
     }
-    val accent = if (dynamicColor) base.primary else AppAccent
+    val motion = rememberSystemMotion() && !performanceMode
+    val accent = if (dynamicColor) base.primary else when (visualStyle) {
+        VisualStyle.CHROME -> AppAccent
+        VisualStyle.AURORA -> Color(0xFFBBA2FF)
+        VisualStyle.EMBER -> Color(0xFFFFAD77)
+    }
     val scheme = if (darkTheme) base.copy(
         primary = accent,
         onPrimary = AppBackground,
@@ -81,17 +94,24 @@ fun ArchDroidTheme(
         inverseSurface = AppText,
         inverseOnSurface = AppBackground,
     ) else base
-    MaterialExpressiveTheme(
-        colorScheme = scheme,
-        typography = AppTypography,
-        shapes = Shapes(
-            extraSmall = RoundedCornerShape(8.dp),
-            small = RoundedCornerShape(8.dp),
-            medium = RoundedCornerShape(10.dp),
-            large = RoundedCornerShape(10.dp),
-            extraLarge = RoundedCornerShape(10.dp),
-        ),
-        motionScheme = MotionScheme.standard(),
-        content = content,
-    )
+    CompositionLocalProvider(
+        LocalPerformanceMode provides performanceMode,
+        LocalVisualStyle provides visualStyle,
+        LocalAppMotion provides motion,
+        LocalRippleConfiguration provides if (motion) RippleConfiguration() else null,
+    ) {
+        MaterialExpressiveTheme(
+            colorScheme = scheme,
+            typography = AppTypography,
+            shapes = Shapes(
+                extraSmall = RoundedCornerShape(8.dp),
+                small = RoundedCornerShape(8.dp),
+                medium = RoundedCornerShape(10.dp),
+                large = RoundedCornerShape(10.dp),
+                extraLarge = RoundedCornerShape(10.dp),
+            ),
+            motionScheme = if (motion) MotionScheme.expressive() else StillMotion,
+            content = content,
+        )
+    }
 }

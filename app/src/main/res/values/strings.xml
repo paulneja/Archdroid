@@ -259,4 +259,11 @@
     <string name="home_unmounted">Unmounted</string>
     <string name="home_unmount_title">Stop sessions and unmount?</string>
     <string name="home_unmount_body">This closes the running terminal and desktop sessions.</string>
+
+    <string name="settings_appearance">Appearance</string>
+    <string name="style_chrome">Chrome</string>
+    <string name="style_aurora">Aurora</string>
+    <string name="style_ember">Ember</string>
+    <string name="settings_performance">Performance mode</string>
+    <string name="settings_performance_desc">Flat controls, no effects or animations.</string>
 </resources>

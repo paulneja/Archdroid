@@ -1,5 +1,16 @@
 package io.github.paulneja.archdroid.ui.settings
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.size
+import io.github.paulneja.archdroid.data.model.VisualStyle
+import io.github.paulneja.archdroid.data.model.AppSettings
+import io.github.paulneja.archdroid.ui.theme.panelEntrance
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -78,6 +89,8 @@ fun SettingsScreen(
             color = MaterialTheme.colorScheme.onSurface,
         )
 
+        AppearanceCard(backdrop, settings, viewModel)
+
         GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth()) {
             SettingsRow(Icons.Rounded.Folder, stringResource(R.string.settings_mounts)) {
                 onOpenSection(Routes.SETTINGS_MOUNTS)
@@ -131,6 +144,45 @@ fun SettingsScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun AppearanceCard(backdrop: Backdrop, settings: AppSettings, viewModel: SettingsViewModel) {
+    GlassCard(backdrop, Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.settings_appearance), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            VisualStyle.entries.forEach { style ->
+                val selected = settings.visualStyle == style
+                val color = when (style) {
+                    VisualStyle.CHROME -> Color(0xFFCACDD4)
+                    VisualStyle.AURORA -> Color(0xFFBBA2FF)
+                    VisualStyle.EMBER -> Color(0xFFFFAD77)
+                }
+                val label = stringResource(when (style) {
+                    VisualStyle.CHROME -> R.string.style_chrome
+                    VisualStyle.AURORA -> R.string.style_aurora
+                    VisualStyle.EMBER -> R.string.style_ember
+                })
+                Column(Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
+                    .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = .12f) else Color.Transparent)
+                    .selectable(selected = selected, role = Role.RadioButton, onClick = { viewModel.updateVisualStyle(style) })
+                    .padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (!settings.performanceMode) Canvas(Modifier.size(36.dp)) {
+                        drawCircle(Brush.radialGradient(listOf(Color.White, color, Color(0xFF17171B)),
+                            center = center.copy(x = center.x * .6f, y = center.y * .6f), radius = size.width * .75f))
+                    }
+                    Text(label, color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        SwitchRow(stringResource(R.string.settings_performance), settings.performanceMode, backdrop, viewModel::updatePerformanceMode)
+        Text(stringResource(R.string.settings_performance_desc), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

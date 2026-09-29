@@ -35,8 +35,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.material3.ContainedLoadingIndicator
-import androidx.compose.material3.CircularProgressIndicator
+import io.github.paulneja.archdroid.ui.components.ContainedLoadingIndicator
+import io.github.paulneja.archdroid.ui.components.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton

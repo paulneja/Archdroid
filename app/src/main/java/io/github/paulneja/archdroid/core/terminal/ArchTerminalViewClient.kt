@@ -21,7 +21,7 @@ class ArchTerminalViewClient(
 ) : TerminalViewClient {
 
     companion object {
-        const val MIN_TEXT_SIZE = 8
+        const val MIN_TEXT_SIZE = 1
         const val MAX_TEXT_SIZE = 32
         const val DEFAULT_TEXT_SIZE = 13
     }

@@ -16,6 +16,7 @@ import io.github.paulneja.archdroid.data.model.InitMode
 import io.github.paulneja.archdroid.data.model.MountConfig
 import io.github.paulneja.archdroid.data.model.ProtectionConfig
 import io.github.paulneja.archdroid.data.model.RootfsDownloadMode
+import io.github.paulneja.archdroid.data.model.VisualStyle
 import io.github.paulneja.archdroid.data.model.UserConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -71,6 +72,8 @@ class SettingsRepository(private val context: Context) {
 
         val DOWNLOAD_MODE = stringPreferencesKey("download_mode")
         val LEGACY_MIRROR = stringPreferencesKey("mirror")
+        val VISUAL_STYLE = stringPreferencesKey("visual_style")
+        val PERFORMANCE_MODE = booleanPreferencesKey("performance_mode")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
     }
 
@@ -123,6 +126,8 @@ class SettingsRepository(private val context: Context) {
                 p[Keys.LEGACY_MIRROR],
             ),
             dynamicColor = p[Keys.DYNAMIC_COLOR] ?: true,
+            visualStyle = VisualStyle.decode(p[Keys.VISUAL_STYLE]),
+            performanceMode = p[Keys.PERFORMANCE_MODE] ?: false,
         )
     }
 
@@ -186,6 +191,14 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun updateDownloadMode(mode: RootfsDownloadMode) {
         context.dataStore.edit { it[Keys.DOWNLOAD_MODE] = mode.name }
+    }
+
+    suspend fun updateVisualStyle(style: VisualStyle) {
+        context.dataStore.edit { it[Keys.VISUAL_STYLE] = style.name }
+    }
+
+    suspend fun updatePerformanceMode(enabled: Boolean) {
+        context.dataStore.edit { it[Keys.PERFORMANCE_MODE] = enabled }
     }
 
     suspend fun updateDynamicColor(enabled: Boolean) {

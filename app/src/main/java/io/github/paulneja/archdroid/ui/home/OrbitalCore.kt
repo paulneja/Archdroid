@@ -8,6 +8,14 @@ import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import io.github.paulneja.archdroid.data.model.VisualStyle
+import io.github.paulneja.archdroid.ui.theme.LocalVisualStyle
+import io.github.paulneja.archdroid.ui.theme.LocalPerformanceMode
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +50,29 @@ internal fun OrbitalCore(
     modifier: Modifier,
     parallax: () -> Float,
 ) {
+    if (LocalPerformanceMode.current) {
+        val color = if (state == OrbitalState.ERROR) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+        Canvas(modifier) {
+            // A static status mark: no shader, particles, gestures or frame clock.
+            val center = Offset(size.width * .83f, size.height * .5f)
+            drawCircle(color.copy(alpha = .14f), 23.dp.toPx(), center)
+            drawCircle(color, 6.dp.toPx(), center)
+        }
+        return
+    }
+    val style = LocalVisualStyle.current
+    val material = animateFloatAsState(style.ordinal.toFloat(), tween(if (motion) 420 else 0), label = "orb material")
+    var dragX by remember { mutableFloatStateOf(0f) }
+    var dragY by remember { mutableFloatStateOf(0f) }
+    val tiltX = animateFloatAsState(dragX, if (motion) spring(.85f, 180f) else tween(0), label = "orb tilt x")
+    val tiltY = animateFloatAsState(dragY, if (motion) spring(.85f, 180f) else tween(0), label = "orb tilt y")
+    val gestures = if (animated) Modifier.pointerInput(Unit) {
+        detectDragGestures(onDragEnd = { dragX = 0f; dragY = 0f }, onDragCancel = { dragX = 0f; dragY = 0f }) { change, delta ->
+            change.consume()
+            dragX = (dragX + delta.x / size.width).coerceIn(-.35f, .35f)
+            dragY = (dragY + delta.y / size.height).coerceIn(-.35f, .35f)
+        }
+    } else Modifier
     val transition = tween<Float>(if (motion) 200 else 0)
     val mounted = animateFloatAsState(if (state == OrbitalState.DORMANT) 0f else 1f, transition, label = "orb light")
     val active = animateFloatAsState(if (state == OrbitalState.ACTIVE) 1f else 0f, transition, label = "orb energy")
@@ -67,23 +98,28 @@ internal fun OrbitalCore(
             previous = now
         }
     }
-    Canvas(modifier) {
+    Canvas(modifier.then(gestures)) {
         val time = clock.floatValue
         val live = mounted.value
         val energy = active.value
         val charge = working.value
         val fault = failed.value
-        val tint = lerp(accent, error, fault)
+        val palette = when (style) {
+            VisualStyle.CHROME -> accent
+            VisualStyle.AURORA -> Color(0xFFC0A7FF)
+            VisualStyle.EMBER -> Color(0xFFFFB477)
+        }
+        val tint = lerp(palette, error, fault)
         val orbitColor = lerp(AppText, tint, (energy + charge * .5f + fault).coerceIn(0f, 1f))
         val breathing = if (animated) sin(time * .65f) * (.007f + .012f * energy) else 0f
         val radius = size.minDimension * (.29f + .015f * live + breathing)
-        val center = Offset(size.width * .61f + sin(time * .14f) * radius * .025f,
-            size.height * .51f + parallax().coerceIn(-.1f, .1f) * radius)
+        val center = Offset(size.width * .59f + sin(time * .32f) * radius * .06f + tiltX.value * radius * .5f,
+            size.height * .51f + parallax().coerceIn(-.1f, .1f) * radius + tiltY.value * radius * .35f)
         val orbitRadius = radius * 1.38f
         fun orbitPoint(angle: Double, layer: Int): Offset {
             val x = cos(angle).toFloat() * orbitRadius
-            val y = sin(angle).toFloat() * radius * (.3f + layer * .11f)
-            return center + Offset(x, y + x * (if (layer == 0) -.22f else .35f))
+            val y = sin(angle).toFloat() * radius * (.28f + layer * .09f + sin(time * .24f + layer) * .07f)
+            return center + Offset(x, y + x * ((if (layer % 2 == 0) -.24f else .35f) + sin(time * .18f + layer) * .14f + tiltY.value))
         }
         // A restrained aura belongs to the orb itself; the menu background stays neutral.
         drawCircle(Brush.radialGradient(listOf(
@@ -91,8 +127,8 @@ internal fun OrbitalCore(
         ), center = center, radius = radius * 1.5f), radius * 1.5f, center)
 
         fun drawOrbits(front: Boolean) {
-            for (layer in 0..1) {
-                val visibility = if (layer == 0) .12f + .2f * live + .4f * energy else .6f * energy + .3f * charge
+            for (layer in 0..2) {
+                val visibility = if (layer == 0) .12f + .2f * live + .4f * energy else (.1f + .2f * live + .4f * energy + .3f * charge) / layer
                 if (visibility < .01f) continue
                 val path = Path()
                 var drawing = false
@@ -118,14 +154,14 @@ internal fun OrbitalCore(
             }
         }
         fun drawDust(front: Boolean) {
-            for (i in 0..47) {
+            for (i in 0..71) {
                 val angle = i * 2.399963 + time * (.05 + (i % 5) * .012)
                 if ((sin(angle) >= 0) != front) continue
                 val spread = 1.08f + (i % 7) * .075f
                 val point = center + Offset(cos(angle).toFloat() * radius * spread,
                     sin(angle).toFloat() * radius * spread * .55f)
                 val depth = .35f + .65f * ((sin(angle) + 1) / 2).toFloat()
-                val visibility = (.03f + .1f * live + .42f * energy) * depth
+                val visibility = (.05f + .16f * live + .42f * energy) * depth
                 drawCircle(orbitColor.copy(alpha = visibility), (.35f + depth * .5f).dp.toPx(), point)
             }
         }
@@ -133,7 +169,7 @@ internal fun OrbitalCore(
         drawOrbits(false)
         // Opaque sphere hides the far halves of its rings, unlike the old wireframe.
         if (surface != null && Build.VERSION.SDK_INT >= 33) {
-            drawIntoCanvas { canvas -> surface.draw(canvas.nativeCanvas, center, radius, time, live, energy, charge, fault, accent, error) }
+            drawIntoCanvas { canvas -> surface.draw(canvas.nativeCanvas, center, radius, time, live, energy, charge, fault, accent, error, material.value, tiltX.value, tiltY.value) }
         } else {
             drawCircle(Brush.radialGradient(listOf(
                 lerp(AppText, tint, energy * .6f).copy(alpha = 1f), Color(0xFF35353C), Color(0xFF121215),
@@ -164,10 +200,12 @@ private class OrbSurface(source: String) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.shader = this@OrbSurface.shader }
 
     fun draw(canvas: android.graphics.Canvas, center: Offset, radius: Float, time: Float,
-             mounted: Float, active: Float, working: Float, failed: Float, accent: Color, error: Color) {
+             mounted: Float, active: Float, working: Float, failed: Float, accent: Color, error: Color, style: Float, tiltX: Float, tiltY: Float) {
         shader.setFloatUniform("center", center.x, center.y)
         shader.setFloatUniform("radius", radius)
         shader.setFloatUniform("time", time)
+        shader.setFloatUniform("style", style)
+        shader.setFloatUniform("tilt", tiltX, tiltY)
         shader.setFloatUniform("state", mounted, active, working, failed)
         shader.setColorUniform("accent", accent.toArgb())
         shader.setColorUniform("failure", error.toArgb())

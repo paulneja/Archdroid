@@ -7,6 +7,10 @@ package io.github.paulneja.archdroid.ui.components
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.selection.selectable
+import io.github.paulneja.archdroid.ui.theme.LocalAppMotion
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -90,6 +94,20 @@ fun LiquidBottomTabs(
     backdrop: Backdrop,
     modifier: Modifier = Modifier,
 ) {
+    if (!LocalAppMotion.current) {
+        Row(modifier.fillMaxWidth().height(64.dp).clip(RoundedCornerShape(10.dp)).background(AppRaised).selectableGroup()) {
+            items.forEachIndexed { index, item ->
+                val selected = index == selectedIndex
+                val color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                Column(Modifier.weight(1f).fillMaxHeight().selectable(selected, role = Role.Tab, onClick = { onSelected(index) }),
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Icon(item.icon, null, tint = color)
+                    Text(item.label, color = color, fontSize = 10.sp, maxLines = 1)
+                }
+            }
+        }
+        return
+    }
     val tabsCount = items.size
     val accentColor = MaterialTheme.colorScheme.primary
     val contentColor = MaterialTheme.colorScheme.onSurface

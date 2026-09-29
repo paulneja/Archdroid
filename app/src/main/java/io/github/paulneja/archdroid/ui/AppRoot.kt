@@ -1,5 +1,14 @@
 package io.github.paulneja.archdroid.ui
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.ui.graphics.graphicsLayer
+import io.github.paulneja.archdroid.ui.theme.LocalAppMotion
+import io.github.paulneja.archdroid.ui.theme.LocalPerformanceMode
+import kotlin.math.absoluteValue
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -67,14 +76,14 @@ fun AppRoot(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
 
-    ArchDroidTheme(dynamicColor = settings.dynamicColor) {
+    ArchDroidTheme(dynamicColor = settings.dynamicColor, visualStyle = settings.visualStyle, performanceMode = settings.performanceMode) {
         val background = Brush.verticalGradient(listOf(BgDeepTop, BgDeepBottom))
         // Keep glass outside its sampled layer to avoid a RenderNode cycle.
         val backgroundBackdrop = rememberLayerBackdrop { drawRect(background) }
         val rootState by viewModel.rootState.collectAsStateWithLifecycle()
 
         Box(Modifier.fillMaxSize().background(background)) {
-            Box(Modifier.fillMaxSize().layerBackdrop(backgroundBackdrop))
+            if (!settings.performanceMode) Box(Modifier.fillMaxSize().layerBackdrop(backgroundBackdrop))
 
             when (rootState) {
                 AppViewModel.RootState.CHECKING ->
@@ -104,6 +113,8 @@ private fun MainScaffold(
     val status by viewModel.chroot.status.collectAsStateWithLifecycle()
     val startRoute = if (status == ChrootStatus.NOT_INSTALLED) Routes.INSTALL else Routes.MAIN
     val pagerState = rememberPagerState { MainPage.entries.size }
+    val motion = LocalAppMotion.current
+    val performance = LocalPerformanceMode.current
     val scope = rememberCoroutineScope()
     val showPage: (MainPage) -> Unit = { page ->
         if (navController.currentDestination?.route != Routes.MAIN) {
@@ -112,7 +123,7 @@ private fun MainScaffold(
                 launchSingleTop = true
             }
         }
-        scope.launch { pagerState.animateScrollToPage(page.ordinal) }
+        scope.launch { if (motion) pagerState.animateScrollToPage(page.ordinal, animationSpec = tween(380)) else pagerState.scrollToPage(page.ordinal) }
     }
 
     LaunchedEffect(requestedRoute) {
@@ -137,7 +148,11 @@ private fun MainScaffold(
             startDestination = startRoute,
             modifier = Modifier
                 .fillMaxSize()
-                .layerBackdrop(contentBackdrop),
+                .then(if (performance) Modifier else Modifier.layerBackdrop(contentBackdrop)),
+            enterTransition = { if (motion) fadeIn(tween(220)) + slideInHorizontally(tween(300)) { it / 10 } else EnterTransition.None },
+            exitTransition = { if (motion) fadeOut(tween(160)) + slideOutHorizontally(tween(240)) { -it / 14 } else ExitTransition.None },
+            popEnterTransition = { if (motion) fadeIn(tween(220)) + slideInHorizontally(tween(300)) { -it / 10 } else EnterTransition.None },
+            popExitTransition = { if (motion) fadeOut(tween(160)) + slideOutHorizontally(tween(240)) { it / 14 } else ExitTransition.None },
         ) {
             composable(Routes.MAIN) {
                 // Leaving a full-screen page with back returns to Home instead of closing anything.
@@ -147,26 +162,35 @@ private fun MainScaffold(
                     userScrollEnabled = false,
                     modifier = Modifier.fillMaxSize(),
                 ) { index ->
-                    when (MainPage.entries[index]) {
-                        MainPage.HOME -> HomeScreen(
-                            onOpenTerminal = { showPage(MainPage.TERMINAL) },
-                            onOpenDesktop = { showPage(MainPage.DESKTOP) },
-                            onOpenSettings = { showPage(MainPage.SETTINGS) },
-                            onInstall = { navController.navigate(Routes.INSTALL) },
-                            visible = pagerState.settledPage == MainPage.HOME.ordinal,
-                        )
-                        MainPage.TERMINAL -> TerminalScreen(
-                            visible = pagerState.settledPage == MainPage.TERMINAL.ordinal,
-                            onClose = { showPage(MainPage.HOME) },
-                        )
-                        MainPage.DESKTOP -> DesktopScreen(
-                            backdrop = backgroundBackdrop,
-                            onClose = { showPage(MainPage.HOME) },
-                        )
-                        MainPage.SETTINGS -> SettingsScreen(
-                            backdrop = backgroundBackdrop,
-                            onOpenSection = { navController.navigate(it) },
-                        )
+                    Box(Modifier.fillMaxSize().graphicsLayer {
+                        if (motion) {
+                            val distance = ((pagerState.currentPage - index) + pagerState.currentPageOffsetFraction).absoluteValue.coerceIn(0f, 1f)
+                            alpha = 1f - distance * .35f
+                            scaleX = 1f - distance * .035f
+                            scaleY = scaleX
+                        }
+                    }) {
+                        when (MainPage.entries[index]) {
+                            MainPage.HOME -> HomeScreen(
+                                onOpenTerminal = { showPage(MainPage.TERMINAL) },
+                                onOpenDesktop = { showPage(MainPage.DESKTOP) },
+                                onOpenSettings = { showPage(MainPage.SETTINGS) },
+                                onInstall = { navController.navigate(Routes.INSTALL) },
+                                visible = pagerState.settledPage == MainPage.HOME.ordinal,
+                            )
+                            MainPage.TERMINAL -> TerminalScreen(
+                                visible = pagerState.settledPage == MainPage.TERMINAL.ordinal,
+                                onClose = { showPage(MainPage.HOME) },
+                            )
+                            MainPage.DESKTOP -> DesktopScreen(
+                                backdrop = backgroundBackdrop,
+                                onClose = { showPage(MainPage.HOME) },
+                            )
+                            MainPage.SETTINGS -> SettingsScreen(
+                                backdrop = backgroundBackdrop,
+                                onOpenSection = { navController.navigate(it) },
+                            )
+                        }
                     }
                 }
             }
@@ -208,8 +232,8 @@ private fun MainScaffold(
 
         AnimatedVisibility(
             visible = barVisible,
-            enter = fadeIn() + slideInVertically { it / 2 },
-            exit = fadeOut() + slideOutVertically { it / 2 },
+            enter = if (motion) fadeIn(tween(200)) + slideInVertically(tween(280)) { it / 2 } else EnterTransition.None,
+            exit = if (motion) fadeOut(tween(160)) + slideOutVertically(tween(220)) { it / 2 } else ExitTransition.None,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()

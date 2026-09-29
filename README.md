@@ -13,7 +13,9 @@ The project is currently built for `arm64-v8a` devices.
 - Fast HTTP and direct HTTPS download modes
 - Root filesystem verification with the pinned Arch Linux ARM OpenPGP key
 - Foreground progress notifications with pause, resume, cancel, and retry actions
-- Tabbed terminal with extra keys for common terminal controls
+- Tabbed terminal with extra keys and adjustable text from 1–32 sp
+- Chrome, Aurora and Ember styles, animated glass controls and an interactive status orb
+- Optional performance mode with flat controls and no visual effects or animations
 - Persistent and protected terminal tabs with survival mode
 - Configurable `/proc`, `/sys`, `/dev`, shared storage, and tmpfs mounts
 - Root or regular-user login with `sudo` support

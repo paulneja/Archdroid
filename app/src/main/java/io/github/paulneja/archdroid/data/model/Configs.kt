@@ -66,6 +66,13 @@ data class InstallConfig(
     val env: EnvConfig,
 )
 
+/** Stable names are stored in preferences; unknown future values use Chrome. */
+enum class VisualStyle { CHROME, AURORA, EMBER;
+    companion object {
+        fun decode(value: String?): VisualStyle = entries.firstOrNull { it.name == value } ?: CHROME
+    }
+}
+
 data class AppSettings(
     val mounts: MountConfig = MountConfig(),
     val env: EnvConfig = EnvConfig(),
@@ -75,4 +82,6 @@ data class AppSettings(
     val initMode: InitMode = InitMode.COMPAT,
     val downloadMode: RootfsDownloadMode = RootfsDownloadMode.FAST,
     val dynamicColor: Boolean = true,
+    val visualStyle: VisualStyle = VisualStyle.CHROME,
+    val performanceMode: Boolean = false,
 )

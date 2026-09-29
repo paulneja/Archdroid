@@ -6,6 +6,13 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
+import io.github.paulneja.archdroid.ui.theme.LocalAppMotion
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +36,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearWavyProgressIndicator
+import io.github.paulneja.archdroid.ui.components.LinearWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -105,6 +112,7 @@ fun InstallWizardScreen(
         }
     }
 
+    val motion = LocalAppMotion.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -127,7 +135,10 @@ fun InstallWizardScreen(
         Spacer(Modifier.height(16.dp))
 
         Box(Modifier.weight(1f)) {
-            AnimatedContent(targetState = ui.page, label = "wizard") { page ->
+            AnimatedContent(targetState = ui.page, transitionSpec = {
+                ((if (motion) fadeIn(tween(240)) else EnterTransition.None) togetherWith
+                    (if (motion) fadeOut(tween(160)) else ExitTransition.None)).using(null)
+            }, label = "wizard") { page ->
                 when (page) {
                     0 -> WelcomePage(ui)
                     1 -> MirrorPage(ui, viewModel)

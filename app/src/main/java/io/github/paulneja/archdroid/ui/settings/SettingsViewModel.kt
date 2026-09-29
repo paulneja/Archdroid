@@ -122,6 +122,14 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { repo.updateBehavior(b) }
     }
 
+    fun updateVisualStyle(style: io.github.paulneja.archdroid.data.model.VisualStyle) {
+        viewModelScope.launch { repo.updateVisualStyle(style) }
+    }
+
+    fun updatePerformanceMode(enabled: Boolean) {
+        viewModelScope.launch { repo.updatePerformanceMode(enabled) }
+    }
+
     fun updateDynamicColor(enabled: Boolean) {
         viewModelScope.launch { repo.updateDynamicColor(enabled) }
     }

@@ -261,4 +261,11 @@
     <string name="home_unmounted">Desmontado</string>
     <string name="home_unmount_title">¿Cerrar sesiones y desmontar?</string>
     <string name="home_unmount_body">Se cerrarán las sesiones de terminal y escritorio en ejecución.</string>
+
+    <string name="settings_appearance">Apariencia</string>
+    <string name="style_chrome">Cromo</string>
+    <string name="style_aurora">Aurora</string>
+    <string name="style_ember">Brasa</string>
+    <string name="settings_performance">Modo rendimiento</string>
+    <string name="settings_performance_desc">Controles simples, sin efectos ni animaciones.</string>
 </resources>

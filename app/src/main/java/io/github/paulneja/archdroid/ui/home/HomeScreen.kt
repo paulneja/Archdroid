@@ -1,10 +1,5 @@
 package io.github.paulneja.archdroid.ui.home
 
-import android.animation.ValueAnimator
-import android.database.ContentObserver
-import android.os.Handler
-import android.os.Looper
-import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
@@ -22,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import io.github.paulneja.archdroid.ui.components.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -102,7 +98,8 @@ fun HomeScreen(
             dismissButton = { TextButton(onClick = { confirmUnmount = false }) { Text(stringResource(R.string.cancel)) } })
     }
     val Accent = MaterialTheme.colorScheme.primary
-    val motion = rememberHomeMotion()
+    val motion = LocalAppMotion.current
+    val performance = LocalPerformanceMode.current
     val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsState()
     val animate = motion && visible && lifecycle.isAtLeast(Lifecycle.State.RESUMED)
     LaunchedEffect(visible, lifecycle) {
@@ -143,16 +140,16 @@ fun HomeScreen(
             }
             AnimatedVisibility(
                 visible = entered || !motion,
-                enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 12 },
+                enter = fadeIn(tween(if (motion) 260 else 0)) + slideInVertically(tween(if (motion) 320 else 0)) { it / 12 },
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Box(Modifier.fillMaxWidth().height(192.dp).clip(HomeShape).background(Panel)) {
+                    Box(Modifier.fillMaxWidth().height(if (performance) 92.dp else 220.dp).clip(HomeShape).background(Panel)) {
                         OrbitalCore(scene, animate, motion, Modifier.fillMaxSize()) { scroll.value * 0.0004f }
                         Row(Modifier.align(Alignment.TopStart).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(5.dp).background(when (scene) { OrbitalState.DORMANT -> Muted; OrbitalState.ERROR -> MaterialTheme.colorScheme.error; else -> Accent }, RoundedCornerShape(50)))
                             Spacer(Modifier.width(8.dp))
                             AnimatedContent(stateLabel, transitionSpec = {
-                                fadeIn(tween(if (motion) 160 else 0)) togetherWith fadeOut(tween(if (motion) 120 else 0))
+                                (fadeIn(tween(if (motion) 160 else 0)) togetherWith fadeOut(tween(if (motion) 120 else 0))).using(null)
                             }, label = "system state") { label ->
                                 Text(label, color = Paper, fontSize = 11.sp, fontFamily = FontFamily.Monospace)
                             }
@@ -241,7 +238,7 @@ fun HomeScreen(
                         Text(stringResource(R.string.mounts_live_title), color = Muted, fontSize = 12.sp, modifier = Modifier.weight(1f))
                         Icon(if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = Muted, modifier = Modifier.size(20.dp))
                     }
-                    AnimatedVisibility(expanded) {
+                    AnimatedVisibility(expanded, enter = fadeIn(tween(if (motion) 180 else 0)), exit = fadeOut(tween(if (motion) 120 else 0))) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(stringResource(R.string.mounts_live_body, ChrootPaths.CHROOT_DIR), color = Muted, fontSize = 12.sp)
                             mounts.forEach { Text(it, color = Paper, fontFamily = FontFamily.Monospace, fontSize = 11.sp) }
@@ -272,7 +269,8 @@ private fun HomeAction(title: String, icon: ImageVector, onClick: () -> Unit,
 private fun HomeLaunchTile(title: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier,
                            active: Boolean, enabled: Boolean, actionIcon: ImageVector,
                            actionLabel: String, onAction: () -> Unit) {
-    Column(modifier.clip(HomeShape).background(Raised).clickable(enabled = enabled, onClick = onClick)
+    val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    Column(modifier.panelEntrance().pressMotion(interaction).clip(HomeShape).background(Raised).clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
         .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -322,18 +320,4 @@ private fun ArchMark(modifier: Modifier) {
         }
         drawPath(path, Paper)
     }
-}
-
-@Composable
-private fun rememberHomeMotion(): Boolean {
-    val context = LocalContext.current
-    var enabled by remember { mutableStateOf(ValueAnimator.areAnimatorsEnabled()) }
-    DisposableEffect(context) {
-        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
-            override fun onChange(selfChange: Boolean) { enabled = ValueAnimator.areAnimatorsEnabled() }
-        }
-        context.contentResolver.registerContentObserver(Settings.Global.getUriFor(Settings.Global.ANIMATOR_DURATION_SCALE), false, observer)
-        onDispose { context.contentResolver.unregisterContentObserver(observer) }
-    }
-    return enabled
 }
