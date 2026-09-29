@@ -249,4 +249,6 @@
     <string name="desktop_extra_keys_hint">Three-finger swipe down toggles it inside the desktop.</string>
     <string name="home_active">Active</string>
     <string name="home_working">Working…</string>
+    <string name="terminal_smaller_text">Decrease text size</string>
+    <string name="terminal_larger_text">Increase text size</string>
 </resources>

@@ -1,0 +1,45 @@
+// Analytic lit sphere: flowing mineral bands under a polished glass surface.
+uniform float2 center;
+uniform float radius;
+uniform float time;
+uniform float4 state; // mounted, active, preparing, failed
+layout(color) uniform half4 accent;
+layout(color) uniform half4 failure;
+
+float noise(float3 p) {
+    return sin(p.x + sin(p.y * 1.37 + p.z)) *
+           cos(p.y * 1.13 + sin(p.z * 1.51 + p.x)) * 0.5 + 0.5;
+}
+
+half4 main(float2 coord) {
+    float2 uv = (coord - center) / radius;
+    float r2 = dot(uv, uv);
+    if (r2 > 1.0) { return half4(0.0); }
+    float3 n = float3(uv.x, -uv.y, sqrt(max(0.0, 1.0 - r2)));
+    float spin = time * 0.19;
+    float3 p = float3(n.x * cos(spin) + n.z * sin(spin), n.y,
+                     n.z * cos(spin) - n.x * sin(spin));
+    float flow = time * (0.045 + state.y * 0.09 + state.z * 0.06);
+    float broad = noise(p * 3.2 + float3(0.0, flow, -flow * 0.3));
+    float fine = noise(p * 8.0 + broad * 2.8 + float3(flow, 0.0, flow));
+    float folds = sin(p.y * 10.0 + p.x * 3.0 + broad * 6.0 + fine * 1.8);
+    float mineral = smoothstep(-0.7, 0.85, folds);
+    float vein = pow(max(0.0, 1.0 - abs(folds - 0.45) * 8.0), 3.0);
+    float3 light = normalize(float3(-0.65, 0.72, 1.0));
+    float diffuse = max(0.0, dot(n, light));
+    float rim = pow(1.0 - n.z, 3.2);
+    float3 tint = mix(float3(accent.rgb), float3(failure.rgb), state.w);
+    float3 dark = float3(0.025, 0.028, 0.035);
+    float3 pearl = mix(float3(0.15, 0.17, 0.20), float3(0.52, 0.54, 0.58), mineral);
+    pearl = mix(pearl, tint * (0.45 + mineral * 0.55),
+                 (0.12 + state.y * 0.5 + state.z * 0.22 + state.w * 0.5) * state.x);
+    float illumination = 0.1 + diffuse * 0.9;
+    float3 color = mix(dark, pearl * illumination, 0.2 + state.x * 0.8);
+    color += tint * vein * (0.03 + state.y * 0.28 + state.z * 0.15);
+    // Wide softbox reflection, a fine edge and a shaded lower hemisphere.
+    float specular = pow(max(0.0, dot(n, normalize(light + float3(0.0, 0.0, 1.0)))), 48.0);
+    color += float3(0.85, 0.87, 0.9) * specular * (0.3 + state.x * 0.35);
+    color += mix(float3(0.45, 0.48, 0.54), tint, state.y) * rim *
+             (0.12 + state.x * 0.35) * (0.3 + diffuse * 0.7);
+    return half4(half3(color), 1.0);
+}

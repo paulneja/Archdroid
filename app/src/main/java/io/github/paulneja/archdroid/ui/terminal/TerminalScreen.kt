@@ -47,6 +47,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.unit.sp
+import io.github.paulneja.archdroid.core.terminal.ArchTerminalViewClient
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -70,6 +74,7 @@ fun TerminalScreen(
     onClose: () -> Unit,
     viewModel: TerminalViewModel = viewModel(),
 ) {
+    val textSize by viewModel.textSize.collectAsStateWithLifecycle()
     val store = viewModel.store
     val tabs by store.tabs.collectAsStateWithLifecycle()
     val activeIndex by store.activeIndex.collectAsStateWithLifecycle()
@@ -210,6 +215,20 @@ fun TerminalScreen(
                     }
                 }
             }
+            Row(Modifier.clip(RoundedCornerShape(8.dp)).background(KeyBg)) {
+                val smaller = stringResource(R.string.terminal_smaller_text)
+                val larger = stringResource(R.string.terminal_larger_text)
+                IconButton(
+                    onClick = viewModel::decreaseTextSize,
+                    enabled = textSize > ArchTerminalViewClient.MIN_TEXT_SIZE,
+                    modifier = Modifier.semantics { contentDescription = smaller },
+                ) { Text("A−", fontSize = 16.sp, fontWeight = FontWeight.Medium) }
+                IconButton(
+                    onClick = viewModel::increaseTextSize,
+                    enabled = textSize < ArchTerminalViewClient.MAX_TEXT_SIZE,
+                    modifier = Modifier.semantics { contentDescription = larger },
+                ) { Text("A+", fontSize = 16.sp, fontWeight = FontWeight.Medium) }
+            }
             IconButton(onClick = { store.createSession() }) {
                 Icon(
                     Icons.Rounded.Add,
@@ -227,7 +246,7 @@ fun TerminalScreen(
             AndroidView(
                 factory = { ctx ->
                     TerminalView(ctx, null).apply {
-                        setTextSize(13)
+                        viewModel.viewClient.applyTextSize(this)
                         setTypeface(android.graphics.Typeface.MONOSPACE)
                         keepScreenOn = true
                         // The input connection requires focus.
@@ -238,7 +257,10 @@ fun TerminalScreen(
                     }
                 },
                 // Also re-attach when the page comes back and the factory is not called again.
-                update = { view -> viewModel.attachView(view) },
+                update = { view ->
+                    viewModel.viewClient.applyTextSize(view)
+                    viewModel.attachView(view)
+                },
                 onRelease = { viewModel.detachView() },
                 modifier = Modifier.fillMaxSize(),
             )

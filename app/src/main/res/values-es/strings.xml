@@ -251,4 +251,6 @@
     <string name="desktop_extra_keys_hint">Tres dedos hacia abajo la alterna dentro del escritorio.</string>
     <string name="home_active">Activo</string>
     <string name="home_working">Preparando…</string>
+    <string name="terminal_smaller_text">Reducir tamaño del texto</string>
+    <string name="terminal_larger_text">Aumentar tamaño del texto</string>
 </resources>

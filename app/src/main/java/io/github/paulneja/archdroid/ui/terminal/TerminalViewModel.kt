@@ -98,6 +98,10 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     fun toggleAlt() = modifierState.toggleAlt()
     fun toggleShift() = modifierState.toggleShift()
 
+    val textSize = viewClient.textSize
+    fun decreaseTextSize() = viewClient.changeTextSize(-1)
+    fun increaseTextSize() = viewClient.changeTextSize(1)
+
     fun showKeyboard() = viewClient.showKeyboard()
     fun toggleKeyboard() = viewClient.toggleKeyboard()
 }

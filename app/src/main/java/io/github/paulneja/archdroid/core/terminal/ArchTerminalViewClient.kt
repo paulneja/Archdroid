@@ -2,6 +2,11 @@ package io.github.paulneja.archdroid.core.terminal
 
 import android.content.Context
 import android.util.Log
+import android.util.TypedValue
+import java.lang.ref.WeakReference
+import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.InputMethodManager
@@ -15,20 +20,44 @@ class ArchTerminalViewClient(
     private val modifierState: ExtraKeysModifierState,
 ) : TerminalViewClient {
 
-    var textSizeDp: Int = 13
-        private set
-
-    override fun onScale(scale: Float): Float {
-        val view = viewProvider() ?: return 1f
-        return if (scale < 0.9f || scale > 1.1f) {
-            val newSize = (textSizeDp * if (scale < 0.9f) 0.9f else 1.1f).toInt().coerceIn(6, 36)
-            if (newSize != textSizeDp) {
-                textSizeDp = newSize
-                view.setTextSize(newSize)
-            }
-            1.0f
-        } else scale
+    companion object {
+        const val MIN_TEXT_SIZE = 8
+        const val MAX_TEXT_SIZE = 32
+        const val DEFAULT_TEXT_SIZE = 13
     }
+
+    private val preferences = context.getSharedPreferences("terminal_display", Context.MODE_PRIVATE)
+    private val _textSize = MutableStateFlow(
+        preferences.getInt("text_size_sp", DEFAULT_TEXT_SIZE).coerceIn(MIN_TEXT_SIZE, MAX_TEXT_SIZE)
+    )
+    val textSize = _textSize.asStateFlow()
+    private var sizedView = WeakReference<TerminalView>(null)
+    private var appliedPixels = 0
+
+    /** Termux expects pixels; the user's size is stored in Android's scalable text units. */
+    fun applyTextSize(view: TerminalView) {
+        val pixels = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_SP, _textSize.value.toFloat(), view.resources.displayMetrics,
+        ).roundToInt().coerceAtLeast(1)
+        if (sizedView.get() !== view || appliedPixels != pixels) {
+            view.setTextSize(pixels)
+            sizedView = WeakReference(view)
+            appliedPixels = pixels
+        }
+    }
+
+    fun changeTextSize(delta: Int) {
+        val size = (_textSize.value + delta).coerceIn(MIN_TEXT_SIZE, MAX_TEXT_SIZE)
+        if (size == _textSize.value) return
+        _textSize.value = size
+        preferences.edit().putInt("text_size_sp", size).apply()
+        viewProvider()?.let(::applyTextSize)
+    }
+
+    override fun onScale(scale: Float): Float = if (scale < .9f || scale > 1.1f) {
+        changeTextSize(if (scale < .9f) -1 else 1)
+        1f
+    } else scale
 
     override fun onSingleTapUp(e: MotionEvent) {
         showKeyboard()
