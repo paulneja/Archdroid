@@ -57,7 +57,6 @@ object SessionProcessTree {
             }
             .map { it.pid }
 
-    /** Shell functions that list the verified members of the leader's POSIX session. */
     private fun membersPrelude(leader: ProcessIdentity): String {
         require(leader.pid == leader.sessionId) { "terminal process must lead its POSIX session" }
         val d = '$'
@@ -109,7 +108,6 @@ object SessionProcessTree {
         """.trimIndent()
     }
 
-    /** Sets oom_score_adj on every current member; processes forked later inherit it. */
     fun oomScript(leader: ProcessIdentity, score: Int): String {
         require(score in -1000..1000) { "oom_score_adj must be within -1000..1000" }
         val d = '$'

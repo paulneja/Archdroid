@@ -99,7 +99,6 @@ class AudioBridge(private val scope: CoroutineScope) {
         private const val RECONNECT_MILLIS = 2_000L
         private const val WRITE_RETRY_MILLIS = 10L
 
-        /** Loaded by the session script once pipewire-pulse is up. */
         const val PULSE_MODULE_COMMAND =
             "audio_sink=\$(pactl get-default-sink) && [ -n \"\$audio_sink\" ] && " +
                 "pactl load-module module-simple-protocol-tcp rate=$RATE format=s16le channels=2 " +

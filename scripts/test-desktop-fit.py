@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Exercise the nested desktop fitter against a real, isolated X server."""
+
 import ctypes as c
 import os
 from pathlib import Path
@@ -9,7 +9,6 @@ import subprocess
 import tempfile
 import time
 import unittest
-
 
 @unittest.skipUnless(shutil.which('Xvfb') and shutil.which('xrandr'), 'requires Xvfb and xrandr')
 class DesktopFitTest(unittest.TestCase):
@@ -60,7 +59,7 @@ class DesktopFitTest(unittest.TestCase):
                 fitter = subprocess.Popen(['python3', str(script), str(parent.pid)], env=env, stderr=subprocess.PIPE)
                 self.wait_for(lambda: bounds(nested) == (0, 0, 800, 600))
                 self.assertEqual((7, 9, 80, 60), bounds(unrelated))
-                # Shrink the host, then grow it back: the compositor follows both changes.
+
                 subprocess.run(['xrandr', '--fb', '640x480'], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 self.wait_for(lambda: bounds(nested) == (0, 0, 640, 480))
                 subprocess.run(['xrandr', '--fb', '800x600'], env=env, check=True, stdout=subprocess.DEVNULL)
@@ -90,7 +89,6 @@ class DesktopFitTest(unittest.TestCase):
                 return
             time.sleep(.03)
         raise AssertionError('X11 geometry did not follow the host display')
-
 
 if __name__ == '__main__':
     unittest.main()

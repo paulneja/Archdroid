@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
-    <!-- Nothing in the app sandbox is worth restoring: the rootfs lives outside it. -->
+
     <cloud-backup><exclude domain="root" /></cloud-backup>
     <device-transfer><exclude domain="root" /></device-transfer>
 </data-extraction-rules>

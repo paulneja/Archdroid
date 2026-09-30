@@ -1,5 +1,7 @@
 package io.github.paulneja.archdroid.ui.settings
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,15 +11,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -29,6 +28,7 @@ import com.kyant.backdrop.Backdrop
 import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.core.chroot.EnvValidation
 import io.github.paulneja.archdroid.ui.components.GlassCard
+import io.github.paulneja.archdroid.ui.components.MotionIconButton
 
 @Composable
 fun EnvScreen(
@@ -96,7 +96,7 @@ fun EnvScreen(
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = {
+                    MotionIconButton(onClick = {
                         viewModel.updateEnv(env.copy(extraEnv = env.extraEnv - key))
                     }) {
                         Icon(
@@ -127,7 +127,7 @@ fun EnvScreen(
                     modifier = Modifier.weight(1f),
                     textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
                 )
-                IconButton(
+                MotionIconButton(
                     onClick = {
                         if (newKey.matches(Regex("[A-Za-z_][A-Za-z0-9_]*"))) {
                             viewModel.updateEnv(env.copy(extraEnv = env.extraEnv + (newKey to newValue)))

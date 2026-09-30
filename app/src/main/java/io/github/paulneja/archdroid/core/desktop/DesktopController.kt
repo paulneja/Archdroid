@@ -18,13 +18,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/** Installs desktops and runs one graphical session at a time. */
 class DesktopController(
     private val context: Context,
     private val chroot: ChrootController,
     private val settings: SettingsRepository,
     private val scope: CoroutineScope,
-    /** True while installing or running; keeps the session service in the foreground. */
+
     private val active: MutableStateFlow<Boolean>,
 ) {
     data class State(
@@ -86,7 +85,6 @@ class DesktopController(
         }
     }
 
-    /** Starts the display server and the session, then shows it. */
     suspend fun start(desktop: DesktopEnvironment, session: SessionType, engine: DisplayEngine, width: Int, height: Int) {
         if (_state.value.starting) return
         _state.update { it.copy(starting = true, error = null) }

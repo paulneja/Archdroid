@@ -79,7 +79,7 @@ class SessionService : Service() {
     )
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Required promptly after startForegroundService.
+
         if (!inForeground) show(State(true, 0, 0, false, wakeLockHeld.value))
         when (intent?.action) {
             ACTION_EXIT -> ServiceLocator.sessionStore(this).closeUnprotected()
@@ -137,7 +137,7 @@ class SessionService : Service() {
             .build()
     }
 
-    @SuppressLint("WakelockTimeout") // Held on purpose until the user releases it, like Termux.
+    @SuppressLint("WakelockTimeout")
     private fun toggleWakeLock() {
         val held = wakeLock
         if (held != null) {

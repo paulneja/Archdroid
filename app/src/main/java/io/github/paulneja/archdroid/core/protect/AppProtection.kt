@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-/** Battery allowances, OOM shielding and the phantom process cap, all applied with root. */
 class AppProtection(
     private val context: Context,
     private val settings: SettingsRepository,

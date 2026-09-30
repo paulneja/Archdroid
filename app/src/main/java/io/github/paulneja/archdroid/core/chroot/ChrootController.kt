@@ -49,7 +49,6 @@ class ChrootController(
         return ChrootHealth.missingFrom(RootManager.outputOfScript(script))
     }
 
-    /** Until a user is chosen, log in with the account that exists in the rootfs. */
     private suspend fun adoptExistingUser() {
         if (settings.hasChosenUser()) return
         val passwd = RootManager.outputOf("cat ${quote("${ChrootPaths.CHROOT_DIR}/etc/passwd")}")
@@ -60,7 +59,7 @@ class ChrootController(
     }
 
     suspend fun prepareSession(): MountManager.MountResult {
-        // Before the enter script is written: it bakes in the login user.
+
         adoptExistingUser()
         val cfg = settings.current()
         val migrated = RootManager.execScript(UserSetup.migrateLegacyUsersScript(ChrootPaths.CHROOT_DIR))
@@ -91,7 +90,7 @@ class ChrootController(
             runInsideChroot("test -f ${quote(script)} && sh ${quote(script)}")
         }
         initSystem.stop(cfg.initMode)
-        // Nothing may keep running on a rootfs whose mounts are about to disappear.
+
         RootManager.execScript(CompatInit.killChrootProcessesScript(ChrootPaths.CHROOT_DIR))
         val result = MountManager.unmountAll()
         refresh()
@@ -110,7 +109,6 @@ class ChrootController(
         RootManager.execScript("chroot ${ChrootPaths.CHROOT_DIR} /bin/bash -lc ${quote(command)}")
     }
 
-    /** Creates the user when it is missing and optionally sets its password. */
     suspend fun ensureUser(username: String, password: String?): Result<Unit> = runCatching {
         val create = RootManager.execScript(
             "chroot ${ChrootPaths.CHROOT_DIR} /bin/bash -lc ${quote(UserSetup.ensureUserCommand(username))}"
@@ -136,7 +134,6 @@ class ChrootController(
         )
     }
 
-    /** Unmounts first so /proc, /sys, /dev and shared storage never end up in the archive. */
     suspend fun exportBackup(destInAppFiles: File): Result<File> = runCatching {
         ensureUnmounted()
         val script = buildString {
@@ -144,7 +141,7 @@ class ChrootController(
             appendLine(
                 "\$TAR -C ${quote(ChrootPaths.CHROOT_DIR)} -czpf ${quote(destInAppFiles.absolutePath)} . || exit \$?"
             )
-            // The app copies the archive out, so it must be able to read what root wrote.
+
             appendLine("chmod 644 ${quote(destInAppFiles.absolutePath)}")
         }
         RootManager.execScript(script).also {
@@ -153,7 +150,6 @@ class ChrootController(
         destInAppFiles
     }
 
-    /** Checks the whole archive before anything in the current rootfs is deleted. */
     suspend fun importBackup(archiveInAppFiles: File): Result<Unit> = runCatching {
         val listing = RootManager.execScript(BackupCheck.script(archiveInAppFiles.absolutePath))
         BackupCheck.requireRootfs(listing.out)
@@ -192,7 +188,6 @@ class ChrootController(
         )
     }
 
-    /** Refuses deletion while a bind mount could expose files outside the rootfs. */
     private suspend fun ensureUnmounted() {
         MountManager.unmountAll()
         val residual = MountManager.residualMounts()

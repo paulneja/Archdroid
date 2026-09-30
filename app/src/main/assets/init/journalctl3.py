@@ -20,7 +20,7 @@ systemctl_py = "systemctl3.py"
 path = os.path.dirname(sys.argv[0])
 systemctl = os.path.join(path, systemctl_py)
 
-cmd = [ systemctl, "log", args.unit ] # drops the -u
+cmd = [ systemctl, "log", args.unit ]
 if args.follow: cmd += [ "-f" ]
 if args.lines: cmd += [ "-n", str(args.lines) ]
 if args.no_pager: cmd += [ "--no-pager" ]

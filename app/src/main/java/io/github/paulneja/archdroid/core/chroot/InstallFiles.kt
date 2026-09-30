@@ -2,7 +2,6 @@ package io.github.paulneja.archdroid.core.chroot
 
 import java.io.File
 
-/** Files the installer keeps in the app sandbox between attempts. */
 object InstallFiles {
     fun tarball(dir: File) = File(dir, "rootfs.tar.gz")
     fun partial(dir: File) = File(dir, "rootfs.tar.gz.part")

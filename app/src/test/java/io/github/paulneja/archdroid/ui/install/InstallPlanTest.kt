@@ -27,7 +27,6 @@ class InstallPlanTest {
         )
     }
 
-
     @Test
     fun `accepts a normal linux username`() {
         assertTrue(InstallPlan.usernameValid("paul"))

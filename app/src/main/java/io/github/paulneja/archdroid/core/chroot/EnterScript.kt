@@ -12,9 +12,9 @@ object EnterScript {
     fun build(cfg: AppSettings): String = buildString {
         val c = ChrootPaths.CHROOT_DIR
         appendLine("#!/system/bin/sh")
-        // Leave the app's cgroup before anything else starts, so every child inherits it.
+
         ProcessShield.escapeSelfCommands().forEach { appendLine(it) }
-        // Mount in the terminal process namespace so sudo keeps its suid bind.
+
         MountPlan.mountCommands(cfg.mounts, c).forEach { appendLine(it) }
         appendLine("export TERM=xterm-256color")
         appendLine("export COLORTERM=truecolor")

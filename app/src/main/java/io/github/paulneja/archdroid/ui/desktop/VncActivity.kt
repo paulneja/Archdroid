@@ -18,7 +18,6 @@ import io.github.paulneja.archdroid.core.desktop.DesktopScripts
 import io.github.paulneja.archdroid.core.desktop.vnc.RfbClient
 import kotlin.concurrent.thread
 
-/** Full-screen viewer for the VNC display engine. */
 class VncActivity : Activity() {
 
     @Volatile
@@ -97,7 +96,6 @@ class VncActivity : Activity() {
         }
     }
 
-    /** Mouse plugged in: use it directly. Unplugged: back to the touchpad and its cursor. */
     private fun refreshDevices() {
         val hasMouse = InputDevice.getDeviceIds().any { id ->
             InputDevice.getDevice(id)?.let { !it.isVirtual && it.supportsSource(InputDevice.SOURCE_MOUSE) } == true

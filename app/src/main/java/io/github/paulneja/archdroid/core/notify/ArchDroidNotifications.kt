@@ -53,7 +53,7 @@ class ArchDroidNotifications(private val context: Context) {
         try {
             NotificationManagerCompat.from(context).notify(EVENT_NOTIFICATION_ID, build(model))
         } catch (_: SecurityException) {
-            // Notification permission denial must not turn a completed install into failure.
+
         }
     }
 
@@ -63,7 +63,7 @@ class ArchDroidNotifications(private val context: Context) {
         try {
             NotificationManagerCompat.from(context).notify(INSTALL_NOTIFICATION_ID, build(model))
         } catch (_: SecurityException) {
-            // A denied runtime permission is already explained in the wizard.
+
         }
     }
 
@@ -82,7 +82,7 @@ class ArchDroidNotifications(private val context: Context) {
         try {
             NotificationManagerCompat.from(context).notify(EVENT_NOTIFICATION_ID, notification)
         } catch (_: SecurityException) {
-            // Without the permission the wizard shows the paused install on the next launch.
+
         }
     }
 

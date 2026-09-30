@@ -22,7 +22,7 @@ jobs:
     name: Test and build APKs
     runs-on: ${{ inputs.runner || ((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.ARCHDROID_RUNNER) || 'ubuntu-24.04' }}
     env:
-      # Only a flag is exposed job-wide; the secrets themselves stay on the steps that use them.
+
       HAS_KEYSTORE: ${{ secrets.ARCHDROID_KEYSTORE_BASE64 != '' }}
       ARCHDROID_KEYSTORE_FILE: /tmp/archdroid-release.jks
 

@@ -5,7 +5,6 @@ import io.github.paulneja.archdroid.core.util.ShellQuote.quote
 
 class InvalidBackupException(message: String) : Exception(message)
 
-/** Lists a backup archive completely so gzip and tar errors surface before a restore. */
 object BackupCheck {
 
     const val TAR_FAILED = "__ARCHDROID_TAR_FAILED__"
@@ -13,7 +12,7 @@ object BackupCheck {
 
     fun script(archive: String): String = buildString {
         append(RootTar.RESOLVE)
-        // grep without -q reads to the end, so tar always finishes and reports corruption.
+
         appendLine("{ \$TAR -tzf ${quote(archive)} 2>/dev/null || echo $TAR_FAILED; } | " +
             "grep -xE '(\\./)?etc/arch-release|$TAR_FAILED'")
         appendLine("true")

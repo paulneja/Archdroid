@@ -1,12 +1,12 @@
 package io.github.paulneja.archdroid.ui.home
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,32 +17,32 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import io.github.paulneja.archdroid.ui.components.CircularProgressIndicator
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.core.chroot.ChrootPaths
 import io.github.paulneja.archdroid.core.chroot.ChrootStatus
 import io.github.paulneja.archdroid.core.service.InstallState
+import io.github.paulneja.archdroid.ui.components.CircularProgressIndicator
+import io.github.paulneja.archdroid.ui.components.MotionAlertDialog
+import io.github.paulneja.archdroid.ui.components.MotionIconButton
 import io.github.paulneja.archdroid.ui.theme.*
 
 private val Ink = AppBackground
@@ -89,7 +89,7 @@ fun HomeScreen(
         else viewModel.toggleMount()
     }
     if (confirmUnmount) {
-        AlertDialog(onDismissRequest = { confirmUnmount = false },
+        MotionAlertDialog(onDismissRequest = { confirmUnmount = false },
             title = { Text(stringResource(R.string.home_unmount_title)) },
             text = { Text(stringResource(R.string.home_unmount_body)) },
             confirmButton = { TextButton(onClick = { confirmUnmount = false; viewModel.toggleMount() }) {
@@ -134,7 +134,7 @@ fun HomeScreen(
                 Spacer(Modifier.width(10.dp))
                 Text("ARCHDROID", color = Paper, fontSize = 14.sp, letterSpacing = 2.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.weight(1f))
-                IconButton(onClick = onOpenSettings) {
+                MotionIconButton(onClick = onOpenSettings) {
                     Icon(Icons.Rounded.Tune, stringResource(R.string.nav_settings), tint = Muted, modifier = Modifier.size(22.dp))
                 }
             }
@@ -196,11 +196,11 @@ fun HomeScreen(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.home_system), color = Paper, fontSize = 14.sp,
                         fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-                    IconButton(onClick = viewModel::refresh, enabled = !refreshing, modifier = Modifier.size(48.dp)) {
+                    MotionIconButton(onClick = viewModel::refresh, enabled = !refreshing, modifier = Modifier.size(48.dp)) {
                         if (refreshing) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 1.5.dp, color = Muted)
                         else Icon(Icons.Rounded.Refresh, stringResource(R.string.mounts_refresh), tint = Muted, modifier = Modifier.size(20.dp))
                     }
-                    IconButton(onClick = { detailsExpanded = !detailsExpanded }, modifier = Modifier.size(48.dp)) {
+                    MotionIconButton(onClick = { detailsExpanded = !detailsExpanded }, modifier = Modifier.size(48.dp)) {
                         Icon(if (detailsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                             stringResource(R.string.home_system_details), tint = Muted, modifier = Modifier.size(20.dp))
                     }
@@ -215,7 +215,7 @@ fun HomeScreen(
                         Detail(stringResource(R.string.kernel_label), kernel)
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.weight(1f)) { Detail(stringResource(R.string.path_label), ChrootPaths.CHROOT_DIR) }
-                            IconButton(onClick = { clipboard.setText(AnnotatedString(ChrootPaths.CHROOT_DIR)) }) {
+                            MotionIconButton(onClick = { clipboard.setText(AnnotatedString(ChrootPaths.CHROOT_DIR)) }) {
                                 Icon(Icons.Rounded.ContentCopy, stringResource(R.string.home_copy_path), tint = Muted, modifier = Modifier.size(18.dp))
                             }
                         }
@@ -277,7 +277,7 @@ private fun HomeLaunchTile(title: String, icon: ImageVector, onClick: () -> Unit
             Icon(icon, null, tint = if (active) MaterialTheme.colorScheme.primary else Muted,
                 modifier = Modifier.size(24.dp))
             Spacer(Modifier.weight(1f))
-            IconButton(onClick = onAction, enabled = enabled) {
+            MotionIconButton(onClick = onAction, enabled = enabled) {
                 Icon(actionIcon, actionLabel, tint = Muted, modifier = Modifier.size(20.dp))
             }
         }

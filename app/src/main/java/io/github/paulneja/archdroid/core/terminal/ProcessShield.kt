@@ -1,6 +1,5 @@
 package io.github.paulneja.archdroid.core.terminal
 
-/** Moves processes out of the app cgroup, which Android freezes and kills with the app. */
 object ProcessShield {
 
     const val CGROUP = "/sys/fs/cgroup/archdroid"
@@ -8,7 +7,6 @@ object ProcessShield {
     const val PROTECTED_OOM_SCORE = -1000
     const val DEFAULT_OOM_SCORE = 0
 
-    /** For the first lines of a script, so everything it starts inherits the escape. */
     fun escapeSelfCommands(): List<String> = listOf(
         "mkdir -p $CGROUP 2>/dev/null",
         "read archdroid_pid _ < /proc/self/stat",

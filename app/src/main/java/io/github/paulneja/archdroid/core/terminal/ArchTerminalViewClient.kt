@@ -34,7 +34,6 @@ class ArchTerminalViewClient(
     private var sizedView = WeakReference<TerminalView>(null)
     private var appliedPixels = 0
 
-    /** Termux expects pixels; the user's size is stored in Android's scalable text units. */
     fun applyTextSize(view: TerminalView) {
         val pixels = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_SP, _textSize.value.toFloat(), view.resources.displayMetrics,
@@ -63,7 +62,6 @@ class ArchTerminalViewClient(
         showKeyboard()
     }
 
-    /** Focus must be acquired before asking Android to show the keyboard. */
     fun showKeyboard() {
         val view = viewProvider() ?: return
         view.isFocusable = true
@@ -108,7 +106,6 @@ class ArchTerminalViewClient(
 
     override fun readFnKey(): Boolean = false
 
-    /** TerminalView has already captured the modifiers for the current keypress. */
     override fun onCodePoint(codePoint: Int, ctrlDown: Boolean, session: TerminalSession): Boolean {
         modifierState.resetTransient()
         return false

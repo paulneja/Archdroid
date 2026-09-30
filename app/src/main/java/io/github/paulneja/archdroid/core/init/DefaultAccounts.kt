@@ -2,14 +2,12 @@ package io.github.paulneja.archdroid.core.init
 
 import io.github.paulneja.archdroid.core.util.ShellQuote.quote
 
-/** Locks root/root and alarm/alarm from the image; sshd is enabled there. */
 object DefaultAccounts {
 
     val DEFAULTS = listOf("root" to "root", "alarm" to "alarm")
 
     const val LOCKED_PREFIX = "locked "
 
-    /** perl crypt() handles the image's yescrypt hashes. */
     fun lockScript(chrootDir: String): String {
         val c = quote(chrootDir)
         val d = '$'

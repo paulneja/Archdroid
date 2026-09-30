@@ -7,7 +7,7 @@ object EtcConfig {
     fun resolvConfCommands(chrootDir: String, dns1: String, dns2: String): List<String> {
         val path = "$chrootDir/etc/resolv.conf"
         return listOf(
-            // The stock symlink points into systemd's unavailable /run tree.
+
             "rm -f ${quote(path)}",
             "printf 'nameserver %s\\nnameserver %s\\n' ${quote(dns1)} ${quote(dns2)} > ${quote(path)}",
         )
@@ -19,7 +19,6 @@ object EtcConfig {
     fun hostnameCommands(chrootDir: String, hostname: String): List<String> =
         listOf("echo ${quote(hostname)} > ${quote("$chrootDir/etc/hostname")}")
 
-    /** Follows Android's time zone so the chroot does not run in UTC. */
     fun localtimeCommands(chrootDir: String): List<String> {
         val zoneinfo = quote("$chrootDir/usr/share/zoneinfo")
         return listOf(

@@ -43,7 +43,7 @@ class ArchDroidService : Service() {
             ACTION_RESUME, ACTION_RETRY -> {
                 enterForeground()
                 if (!coordinator.hasConfig()) {
-                    // Config lives in memory; it is gone after process death.
+
                     stopServiceForeground()
                     notifications.postStateLost()
                     return START_NOT_STICKY

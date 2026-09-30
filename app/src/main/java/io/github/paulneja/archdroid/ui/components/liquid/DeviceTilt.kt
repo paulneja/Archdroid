@@ -15,7 +15,6 @@ import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.roundToInt
 
-/** Light direction in screen degrees (-90 = top). */
 @Composable
 fun rememberGravityAngle(stepDegrees: Float = 3f, fallbackDegrees: Float = -90f): State<Float> {
     val context = LocalContext.current
@@ -28,7 +27,7 @@ fun rememberGravityAngle(stepDegrees: Float = 3f, fallbackDegrees: Float = -90f)
             override fun onSensorChanged(event: SensorEvent) {
                 val sx = event.values[0]
                 val sy = -event.values[1]
-                if (sx * sx + sy * sy < 0.9f) return // lying flat: keep the last angle
+                if (sx * sx + sy * sy < 0.9f) return
                 val degrees = atan2(sy, sx) * 180f / PI.toFloat()
                 angle.floatValue = (degrees / stepDegrees).roundToInt() * stepDegrees
             }

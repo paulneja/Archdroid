@@ -159,7 +159,6 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    /** False until a user name was stored, by the installer or in Settings. */
     suspend fun hasChosenUser(): Boolean = context.dataStore.data.first().contains(Keys.USERNAME)
 
     suspend fun updateUser(u: UserConfig) {

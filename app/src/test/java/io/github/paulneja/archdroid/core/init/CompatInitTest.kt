@@ -55,7 +55,7 @@ class CompatInitTest {
 
     @Test
     fun `boot sets the rootfs PATH before running any command`() {
-        // chroot keeps Android's PATH, where mkdir, dbus-daemon and python3 do not exist.
+
         val lines = CompatInit.bootScript().lines()
         val path = lines.indexOfFirst { it.startsWith("export PATH=/usr/local/sbin:/usr/local/bin:/usr/bin") }
         val firstCommand = lines.indexOfFirst { it.startsWith("mkdir") }
@@ -69,8 +69,7 @@ class CompatInitTest {
 
     @Test
     fun `boot lifts the tmpfiles nologin gate like systemd-user-sessions does`() {
-        // tmpfiles --boot creates /run/nologin; while it exists PAM refuses every non-root
-        // login, including unlocking the desktop's screen locker.
+
         val boot = CompatInit.bootScript()
         assertTrue(boot.indexOf("rm -f /run/nologin") > boot.indexOf("systemd-tmpfiles --create --boot"))
     }

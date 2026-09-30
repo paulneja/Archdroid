@@ -21,7 +21,7 @@ data class KernelCapabilities(
     )
 
     companion object {
-        /** Root script; every line is `key=value`. */
+
         const val PROBE_SCRIPT = "echo \"pidns=$([ -e /proc/self/ns/pid ] && echo 1 || echo 0)\"; " +
             "echo \"fs=$(grep -oE 'cgroup2|devtmpfs' /proc/filesystems | tr '\\n' ',')\"; " +
             "if [ -r /proc/config.gz ]; then echo config=1; " +

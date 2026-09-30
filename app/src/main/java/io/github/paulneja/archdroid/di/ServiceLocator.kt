@@ -35,7 +35,6 @@ object ServiceLocator {
     @Volatile
     private var sessions: SessionStore? = null
 
-    /** Set by the desktop while a graphical session runs; it keeps the session service up. */
     val desktopRunning = MutableStateFlow(false)
 
     private val mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -68,7 +67,6 @@ object ServiceLocator {
                 }
         }
 
-    /** Starts the session service whenever something needs to outlive the UI. */
     private fun watchSurvival(context: Context, store: SessionStore) {
         mainScope.launch {
             combine(

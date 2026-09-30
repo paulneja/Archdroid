@@ -1,5 +1,6 @@
 package io.github.paulneja.archdroid.ui.install
 
+import androidx.compose.runtime.getValue
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -8,11 +9,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
-import io.github.paulneja.archdroid.ui.theme.LocalAppMotion
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,10 +26,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -34,37 +37,40 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Error
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import io.github.paulneja.archdroid.ui.components.LinearWavyProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.core.content.ContextCompat
 import com.kyant.backdrop.Backdrop
 import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.core.chroot.ChrootInstaller
 import io.github.paulneja.archdroid.core.service.InstallState
 import io.github.paulneja.archdroid.data.model.RootfsDownloadMode
 import io.github.paulneja.archdroid.ui.components.GlassCard
+import io.github.paulneja.archdroid.ui.components.LinearWavyProgressIndicator
 import io.github.paulneja.archdroid.ui.components.LiquidButton
 import io.github.paulneja.archdroid.ui.components.LiquidToggle
+import io.github.paulneja.archdroid.ui.theme.AppInput
+import io.github.paulneja.archdroid.ui.theme.LocalAppMotion
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -132,6 +138,8 @@ fun InstallWizardScreen(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        Spacer(Modifier.height(12.dp))
+        WizardSteps(if (ui.done) 5 else ui.page.coerceAtMost(4))
         Spacer(Modifier.height(16.dp))
 
         Box(Modifier.weight(1f)) {
@@ -544,4 +552,22 @@ private fun formatBytes(bytes: Long): String = when {
     bytes >= 1L shl 30 -> String.format(Locale.US, "%.1f GB", bytes / (1L shl 30).toDouble())
     bytes >= 1L shl 20 -> String.format(Locale.US, "%.0f MB", bytes / (1L shl 20).toDouble())
     else -> String.format(Locale.US, "%.0f KB", bytes / 1024.0)
+}
+
+@Composable
+private fun WizardSteps(page: Int) {
+    val motion = LocalAppMotion.current
+    val accent = MaterialTheme.colorScheme.primary
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        repeat(5) { index ->
+            val amount = animateFloatAsState(when {
+                index < page -> 1f
+                index == page -> .6f
+                else -> 0f
+            }, if (motion) tween(260) else snap(), label = "install step")
+            Canvas(Modifier.weight(1f).height(3.dp)) {
+                drawRoundRect(lerp(AppInput, accent, amount.value), cornerRadius = CornerRadius(2.dp.toPx()))
+            }
+        }
+    }
 }

@@ -41,7 +41,6 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-/** Fluid surface, correctly occluded rings and depth-sorted dust. Only this canvas redraws. */
 @Composable
 internal fun OrbitalCore(
     state: OrbitalState,
@@ -53,7 +52,7 @@ internal fun OrbitalCore(
     if (LocalPerformanceMode.current) {
         val color = if (state == OrbitalState.ERROR) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
         Canvas(modifier) {
-            // A static status mark: no shader, particles, gestures or frame clock.
+
             val center = Offset(size.width * .83f, size.height * .5f)
             drawCircle(color.copy(alpha = .14f), 23.dp.toPx(), center)
             drawCircle(color, 6.dp.toPx(), center)
@@ -121,7 +120,7 @@ internal fun OrbitalCore(
             val y = sin(angle).toFloat() * radius * (.28f + layer * .09f + sin(time * .24f + layer) * .07f)
             return center + Offset(x, y + x * ((if (layer % 2 == 0) -.24f else .35f) + sin(time * .18f + layer) * .14f + tiltY.value))
         }
-        // A restrained aura belongs to the orb itself; the menu background stays neutral.
+
         drawCircle(Brush.radialGradient(listOf(
             tint.copy(alpha = (.035f + energy * .08f + charge * .05f) * live), Color.Transparent,
         ), center = center, radius = radius * 1.5f), radius * 1.5f, center)
@@ -143,7 +142,7 @@ internal fun OrbitalCore(
                 }
                 drawPath(path, orbitColor.copy(alpha = visibility * if (front) 1f else .4f), style = Stroke(.75.dp.toPx()))
                 val head = time * (if (layer == 0) .52 else -.38) + layer * PI
-                // A short graduated trail gives the moving satellites a clear direction.
+
                 for (step in 12 downTo 0) {
                     val angle = head - step * .032 * (if (layer == 0) 1 else -1)
                     if ((sin(angle) >= 0) != front) continue
@@ -167,7 +166,7 @@ internal fun OrbitalCore(
         }
         drawDust(false)
         drawOrbits(false)
-        // Opaque sphere hides the far halves of its rings, unlike the old wireframe.
+
         if (surface != null && Build.VERSION.SDK_INT >= 33) {
             drawIntoCanvas { canvas -> surface.draw(canvas.nativeCanvas, center, radius, time, live, energy, charge, fault, accent, error, material.value, tiltX.value, tiltY.value) }
         } else {

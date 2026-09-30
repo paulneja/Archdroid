@@ -6,14 +6,13 @@ object UserSetup {
 
     private val ANDROID_NET_GROUPS = listOf("aid_inet" to 3003, "aid_net_raw" to 3004)
 
-    /** Runs inside the chroot. */
     fun ensureUserCommand(user: String): String {
         val u = quote(user)
         return buildString {
             ANDROID_NET_GROUPS.forEach { (name, gid) ->
                 append("getent group $gid >/dev/null || groupadd -g $gid $name; ")
             }
-            // Android reserves 6000..7999; 8000..8999 stays outside app UIDs and Doze filters.
+
             append("id $u >/dev/null 2>&1 || useradd -K UID_MIN=8000 -K UID_MAX=8999 -K GID_MIN=8000 -K GID_MAX=8999 -m -G wheel -s /bin/bash $u; ")
             val groups = ANDROID_NET_GROUPS.joinToString(",") { (_, gid) ->
                 "\"\$(getent group $gid | cut -d: -f1)\""
@@ -22,7 +21,6 @@ object UserSetup {
         }
     }
 
-    /** Only runs before mounts and user sessions exist. */
     fun migrateLegacyUsersScript(chrootDir: String): String {
         val inner = """
             set -e

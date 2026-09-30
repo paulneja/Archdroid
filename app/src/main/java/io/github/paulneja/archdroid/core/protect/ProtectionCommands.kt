@@ -2,18 +2,16 @@ package io.github.paulneja.archdroid.core.protect
 
 import io.github.paulneja.archdroid.core.util.ShellQuote.quote
 
-/** Root commands behind the Battery & protection screen. */
 object ProtectionCommands {
 
     const val UNLIMITED_PHANTOM = Int.MAX_VALUE
 
     val OOM_CHOICES = listOf(-900, -1000)
 
-    /** Everything a user would otherwise grant by hand in several system screens. */
     fun backgroundAllowances(pkg: String): List<String> {
         val p = quote(pkg)
         return listOf(
-            // The same allowlist as "Don't optimize" in the battery settings.
+
             "dumpsys deviceidle whitelist +$p",
             "cmd appops set $p RUN_IN_BACKGROUND allow",
             "cmd appops set $p RUN_ANY_IN_BACKGROUND allow",
@@ -33,7 +31,7 @@ object ProtectionCommands {
     }
 
     fun extendedOn(): List<String> = listOf(
-        // Otherwise the next DeviceConfig sync from Google restores the default.
+
         "device_config set_sync_disabled_for_tests persistent",
         "device_config put activity_manager max_phantom_processes $UNLIMITED_PHANTOM",
         "settings put global settings_enable_monitor_phantom_procs false",
@@ -49,7 +47,6 @@ object ProtectionCommands {
         "echo \"max=$(device_config get activity_manager max_phantom_processes)\"; " +
             "echo \"monitor=$(settings get global settings_enable_monitor_phantom_procs)\""
 
-    /** True only when both switches that limit child processes are lifted. */
     fun parseExtended(output: List<String>): Boolean {
         val values = output.mapNotNull { line ->
             line.split('=', limit = 2).takeIf { it.size == 2 }?.let { it[0].trim() to it[1].trim() }

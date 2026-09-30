@@ -1,5 +1,6 @@
 package io.github.paulneja.archdroid.ui.settings
 
+import androidx.compose.runtime.getValue
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -8,7 +9,6 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
-import androidx.core.net.toUri
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,24 +16,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.RadioButtonChecked
-import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,8 +39,9 @@ import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.core.protect.ProtectionCommands
 import io.github.paulneja.archdroid.ui.components.GlassCard
 import io.github.paulneja.archdroid.ui.components.LiquidButton
+import io.github.paulneja.archdroid.ui.components.SelectionRow
 
-@SuppressLint("BatteryLife") // Sideloaded root tool; the user asks for exactly this.
+@SuppressLint("BatteryLife")
 @Composable
 fun ProtectionScreen(
     backdrop: Backdrop,
@@ -199,20 +196,5 @@ private fun StatusRow(label: String, ok: Boolean) {
 
 @Composable
 private fun ChoiceRow(label: String, selected: Boolean, onClick: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp, horizontal = 4.dp),
-    ) {
-        Icon(
-            if (selected) Icons.Rounded.RadioButtonChecked else Icons.Rounded.RadioButtonUnchecked,
-            contentDescription = null,
-            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.width(10.dp))
-        Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
-    }
+    SelectionRow(label, selected, onClick = onClick)
 }

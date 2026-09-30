@@ -10,7 +10,7 @@ import android.os.LocaleList
 import androidx.core.content.edit
 import java.util.Locale
 
-@SuppressLint("AppBundleLocaleChanges") // Distributed as a universal APK with every language inside.
+@SuppressLint("AppBundleLocaleChanges")
 object AppLanguage {
 
     enum class Choice(val tag: String) { SYSTEM(""), ENGLISH("en"), SPANISH("es") }
@@ -29,7 +29,7 @@ object AppLanguage {
 
     fun apply(activity: Activity, choice: Choice) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // The system recreates the activity with the new configuration.
+
             activity.getSystemService(LocaleManager::class.java).applicationLocales =
                 LocaleList.forLanguageTags(choice.tag)
         } else {
@@ -38,7 +38,6 @@ object AppLanguage {
         }
     }
 
-    /** Below Android 13 only. */
     fun wrap(base: Context): Context {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return base
         val tag = storedTag(base).ifEmpty { return base }

@@ -24,7 +24,7 @@ object MountPlan {
 
     fun mountCommands(cfg: MountConfig, chrootDir: String): List<String> {
         val c = chrootDir
-        // The self-bind must come first and allows suid without remounting /data.
+
         val cmds = mutableListOf(
             "grep -q ' $c ' /proc/mounts || mount --bind $c $c",
             "mount -o remount,suid,exec,dev $c",
@@ -55,13 +55,12 @@ object MountPlan {
             }
         }
 
-        // Create nested mount points only after /dev is mounted.
         if (cfg.devPts) {
-            // Android's devpts: the terminal's pty lives there.
+
             cmds += "mkdir -p $c/dev/pts"
             cmds += "grep -q ' $c/dev/pts ' /proc/mounts || mount --bind /dev/pts $c/dev/pts"
             if (cfg.devMode == DevMode.PRIVATE) {
-                // Android's pts/ptmx is mode 000, so a real node is needed for ordinary users.
+
                 cmds += "[ -c $c/dev/ptmx ] || { rm -f $c/dev/ptmx; mknod -m 666 $c/dev/ptmx c 5 2; }"
             }
         }
@@ -109,13 +108,12 @@ object MountPlan {
         return expectedMountPoints(cfg, chrootDir).filterNot { point ->
             val mounted = live.filter { it.first == point }
             if (mounted.isEmpty()) return@filterNot false
-            // The newest mount on a point wins, so its options are the ones in effect.
+
             val needsReadOnly = cfg.bindSharedStorage && cfg.sharedStorageReadOnly && point == sharedPoint
             !needsReadOnly || "ro" in mounted.last().second
         }
     }
 
-    /** Rejects shared storage paths that would escape the chroot or confuse /proc/mounts matching. */
     fun validate(cfg: MountConfig): List<String> {
         if (!cfg.bindSharedStorage) return emptyList()
         val errors = mutableListOf<String>()
@@ -137,11 +135,10 @@ object MountPlan {
     fun isSafeAbsolutePath(path: String): Boolean =
         SAFE_PATH.matches(path) && path.split('/').none { it == ".." || it == "." }
 
-    /** Unmounts what is actually mounted, deepest first. */
     fun unmountCommands(procMounts: List<String>, chrootDir: String): List<String> =
         residualMounts(procMounts, chrootDir)
             .withIndex()
-            // Stacked mounts on the same point come off newest first.
+
             .sortedWith(
                 compareByDescending<IndexedValue<String>> { it.value.count { ch -> ch == '/' } }
                     .thenByDescending { it.index }
@@ -150,7 +147,6 @@ object MountPlan {
                 "umount ${quote(point)} 2>/dev/null || umount -l ${quote(point)} 2>/dev/null || true"
             }
 
-    /** Mounts below the chroot that the new config no longer wants, e.g. an old shared target. */
     fun staleMountLines(procMounts: List<String>, cfg: MountConfig, chrootDir: String): List<String> {
         val wanted = expectedMountPoints(cfg, chrootDir).toSet()
         return procMounts.filter { line ->
@@ -159,7 +155,6 @@ object MountPlan {
         }
     }
 
-    /** A non-empty result means deleting the rootfs is unsafe. */
     fun residualMounts(procMounts: List<String>, chrootDir: String): List<String> {
         val root = chrootDir.trimEnd('/')
         return procMounts.mapNotNull { line ->

@@ -266,4 +266,7 @@
     <string name="style_ember">Ember</string>
     <string name="settings_performance">Performance mode</string>
     <string name="settings_performance_desc">Flat controls, no effects or animations.</string>
+    <string name="desktop_advanced">Advanced options</string>
+    <string name="expanded">Expanded</string>
+    <string name="collapsed">Collapsed</string>
 </resources>

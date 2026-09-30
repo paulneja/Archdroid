@@ -3,7 +3,7 @@ package io.github.paulneja.archdroid.core.desktop
 enum class DesktopEnvironment(
     val id: String,
     val displayName: String,
-    /** Present once the desktop is installed. */
+
     val marker: String,
     val packages: List<String>,
     val waylandPackages: List<String>,
@@ -13,7 +13,7 @@ enum class DesktopEnvironment(
         id = "kde",
         displayName = "KDE Plasma 6",
         marker = "/usr/bin/startplasma-x11",
-        // Plasma 6.4 split the X11 session and the X11 KWin into their own packages.
+
         packages = listOf(
             "plasma-desktop", "plasma-x11-session", "kwin-x11", "konsole", "dolphin",
             "breeze-gtk", "kde-gtk-config", "plasma-pa",

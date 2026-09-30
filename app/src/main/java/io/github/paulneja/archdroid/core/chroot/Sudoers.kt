@@ -1,6 +1,5 @@
 package io.github.paulneja.archdroid.core.chroot
 
-/** Grants sudo to wheel through a drop-in file. */
 object Sudoers {
 
     private const val DROP_IN = "/etc/sudoers.d/10-wheel"

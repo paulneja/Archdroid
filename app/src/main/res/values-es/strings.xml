@@ -268,4 +268,7 @@
     <string name="style_ember">Brasa</string>
     <string name="settings_performance">Modo rendimiento</string>
     <string name="settings_performance_desc">Controles simples, sin efectos ni animaciones.</string>
+    <string name="desktop_advanced">Opciones avanzadas</string>
+    <string name="expanded">Expandido</string>
+    <string name="collapsed">Contraído</string>
 </resources>

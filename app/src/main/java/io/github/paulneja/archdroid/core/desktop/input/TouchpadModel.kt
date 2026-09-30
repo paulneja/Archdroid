@@ -13,7 +13,6 @@ class TouchpadModel(
     var cursorY = 0f
         private set
 
-    /** Events the backend must send, in order. */
     sealed interface Action {
         data class Move(val x: Int, val y: Int, val buttons: Int) : Action
         data class Click(val x: Int, val y: Int, val button: Int) : Action
@@ -30,7 +29,6 @@ class TouchpadModel(
         cursorY = cursorY.coerceIn(0f, (height - 1).toFloat()).takeIf { cursorY > 0f } ?: (height / 2f)
     }
 
-    /** [dx], [dy] are finger deltas in framebuffer pixels. */
     fun move(dx: Float, dy: Float): Action {
         cursorX = (cursorX + dx * sensitivity).coerceIn(0f, (width - 1).toFloat())
         cursorY = (cursorY + dy * sensitivity).coerceIn(0f, (height - 1).toFloat())
@@ -51,7 +49,6 @@ class TouchpadModel(
         return Action.Move(cursorX.toInt(), cursorY.toInt(), 0)
     }
 
-    /** Two-finger vertical movement; returns a scroll once a full step has accumulated. */
     fun scroll(dy: Float): Action? {
         scrollAccumulator += dy
         val steps = (scrollAccumulator / scrollStepPx).toInt()
@@ -60,7 +57,6 @@ class TouchpadModel(
         return Action.Scroll(cursorX.toInt(), cursorY.toInt(), steps)
     }
 
-    /** Direct touch and real mice place the cursor absolutely. */
     fun place(x: Float, y: Float) {
         cursorX = x.coerceIn(0f, (width - 1).toFloat())
         cursorY = y.coerceIn(0f, (height - 1).toFloat())

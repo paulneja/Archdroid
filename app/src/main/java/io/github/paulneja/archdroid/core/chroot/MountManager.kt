@@ -7,12 +7,10 @@ object MountManager {
 
     private const val C = ChrootPaths.CHROOT_DIR
 
-    /** Stacked mounts need one pass per layer; stop long before an endless loop. */
     private const val MAX_UNMOUNT_PASSES = 8
 
     data class MountResult(val ok: Boolean, val log: List<String>)
 
-    /** Verifies the result through /proc/mounts instead of the last shell exit code. */
     suspend fun ensureMounted(cfg: MountConfig): MountResult {
         val invalid = MountPlan.validate(cfg)
         if (invalid.isNotEmpty()) return MountResult(ok = false, log = invalid)
@@ -24,7 +22,6 @@ object MountManager {
         )
     }
 
-    /** Applies a changed config to a live chroot: drops what is no longer wanted, adds the rest. */
     suspend fun reconcile(cfg: MountConfig): MountResult {
         val invalid = MountPlan.validate(cfg)
         if (invalid.isNotEmpty()) return MountResult(ok = false, log = invalid)
@@ -34,7 +31,6 @@ object MountManager {
         return added.copy(log = dropped.out + dropped.err + added.log)
     }
 
-    /** Reports failure while any mount remains below the chroot. */
     suspend fun unmountAll(): MountResult {
         val log = mutableListOf<String>()
         var residual = residualMounts()
@@ -60,7 +56,6 @@ object MountManager {
     suspend fun activeMounts(): List<String> =
         MountPlan.residualMounts(RootManager.outputOf("cat /proc/mounts"), C).distinct()
 
-    /** Must be empty before deleting the rootfs. */
     suspend fun residualMounts(): List<String> =
         MountPlan.residualMounts(RootManager.outputOf("cat /proc/mounts"), C)
 }

@@ -8,7 +8,6 @@ import org.junit.Test
 
 class KernelCapabilitiesTest {
 
-    /** Output captured from an Armor 29 Ultra (GKI 6.1, android14). */
     private val stockGki = listOf(
         "pidns=0",
         "fs=cgroup2,",

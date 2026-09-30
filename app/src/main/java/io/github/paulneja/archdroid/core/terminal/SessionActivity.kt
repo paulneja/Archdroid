@@ -1,6 +1,5 @@
 package io.github.paulneja.archdroid.core.terminal
 
-/** Read only POSIX sessions owned by our terminals; an idle login shell is not activity. */
 object SessionActivity {
     fun readScript(leaders: List<SessionProcessTree.ProcessIdentity>): String {
         require(leaders.isNotEmpty())

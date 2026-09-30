@@ -26,7 +26,6 @@ import io.github.paulneja.archdroid.core.desktop.vnc.RfbProtocol
 import kotlin.math.abs
 import kotlin.math.min
 
-/** Draws a VNC framebuffer letterboxed and turns touch, mouse and keyboard into RFB input. */
 @SuppressLint("ViewConstructor")
 class VncView(context: Context, private val client: () -> RfbClient?) : View(context) {
 
@@ -35,7 +34,6 @@ class VncView(context: Context, private val client: () -> RfbClient?) : View(con
     var touchMode = TouchMode.TOUCHPAD
         set(value) { field = value; invalidate() }
 
-    /** A physical mouse draws its own pointer on the server; hide the emulated one. */
     var mouseConnected = false
         set(value) { field = value; invalidate() }
 
@@ -66,7 +64,7 @@ class VncView(context: Context, private val client: () -> RfbClient?) : View(con
     }
 
     fun resizeFramebuffer(width: Int, height: Int) {
-        // The next network update can arrive before the UI processes its callbacks.
+
         bitmap = createBitmap(width, height)
         post {
             touchpad.resize(width, height)
@@ -74,7 +72,6 @@ class VncView(context: Context, private val client: () -> RfbClient?) : View(con
         }
     }
 
-    /** Called on the network thread; copying the damaged rows keeps the UI thread light. */
     fun update(pixels: IntArray, stride: Int, x: Int, y: Int, w: Int, h: Int) {
         val bmp = bitmap ?: return
         if (x + w > bmp.width || y + h > bmp.height) return

@@ -13,8 +13,8 @@ class RfbProtocolTest {
         assertEquals(20, msg.size)
         assertEquals(32, msg[4].toInt())
         assertEquals(24, msg[5].toInt())
-        assertEquals(0, msg[6].toInt()) // little endian
-        assertEquals(1, msg[7].toInt()) // true colour
+        assertEquals(0, msg[6].toInt())
+        assertEquals(1, msg[7].toInt())
         assertEquals(16, msg[14].toInt())
     }
 
@@ -43,7 +43,7 @@ class RfbProtocolTest {
 
     @Test
     fun `copy rect handles overlapping downward moves`() {
-        // 1 column, 4 rows: move rows 0..1 down by one.
+
         val fb = intArrayOf(1, 2, 3, 4)
         RfbProtocol.copyRect(fb, 1, 0, 0, 0, 1, 1, 2)
         assertArrayEquals(intArrayOf(1, 1, 2, 4), fb)

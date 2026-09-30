@@ -35,13 +35,12 @@ android {
         applicationId = rootProject.extra["archdroidApplicationId"] as String
         minSdk = 26
         targetSdk = 36
-        versionCode = 11
-        versionName = "0.3.4"
+        versionCode = 12
+        versionName = "0.3.5"
 
         ndk { abiFilters += "arm64-v8a" }
     }
 
-    // The published Termux JNI library is not aligned for 16 KB pages.
     ndkVersion = "28.2.13676358"
 
     externalNativeBuild {
@@ -89,17 +88,16 @@ android {
     }
 
     lint {
-        // The installed rootfs is aarch64-only.
+
         disable += "ChromeOsAbiSupport"
     }
 
     packaging {
         resources.pickFirsts += "META-INF/LICENSE.md"
         resources.pickFirsts += "META-INF/NOTICE.md"
-        // The X server is started by app_process straight from the APK, so libraries must stay
-        // uncompressed and page aligned inside it.
+
         jniLibs.useLegacyPackaging = false
-        // Prefer the locally built 16 KB-aligned libtermux.so.
+
         jniLibs.pickFirsts += "**/libtermux.so"
     }
 }

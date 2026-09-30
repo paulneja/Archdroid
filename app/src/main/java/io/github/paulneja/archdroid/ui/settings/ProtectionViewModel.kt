@@ -40,7 +40,7 @@ class ProtectionViewModel(app: Application) : AndroidViewModel(app) {
     fun updateProtection(config: ProtectionConfig) {
         viewModelScope.launch {
             repo.updateProtection(config)
-            // Give the watchdog a moment to write the new score before showing it.
+
             kotlinx.coroutines.delay(300)
             protection.refresh()
         }

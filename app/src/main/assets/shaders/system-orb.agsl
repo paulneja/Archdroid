@@ -1,10 +1,10 @@
-// Analytic lit sphere: flowing mineral bands under a polished glass surface.
+
 uniform float2 center;
 uniform float radius;
 uniform float time;
-uniform float style; // Chrome, Aurora, Ember; interpolates during selection
+uniform float style;
 uniform float2 tilt;
-uniform float4 state; // mounted, active, preparing, failed
+uniform float4 state;
 layout(color) uniform half4 accent;
 layout(color) uniform half4 failure;
 
@@ -50,10 +50,10 @@ half4 main(float2 coord) {
     color += tint * vein * (0.03 + state.y * 0.28 + state.z * 0.15);
     color += iridescent * pow(max(0.0, curtain), 6.0) * aurora * (0.12 + state.y * 0.2) * state.x;
     color += float3(1.0, 0.28, 0.05) * pow(lava, 4.0) * ember * (0.1 + state.y * 0.3) * state.x;
-    // A traveling reflection follows the polished surface as it rotates.
+
     float ribbon = pow(max(0.0, 1.0 - abs(n.x * 0.7 + n.y * 0.4 + sin(time * 0.23) * 0.18) * 9.0), 5.0);
     color += float3(0.7, 0.8, 0.95) * ribbon * (0.04 + state.x * 0.06) * n.z;
-    // Wide softbox reflection, a fine edge and a shaded lower hemisphere.
+
     float specular = pow(max(0.0, dot(n, normalize(light + float3(0.0, 0.0, 1.0)))), 48.0);
     color += float3(0.85, 0.87, 0.9) * specular * (0.3 + state.x * 0.35);
     color += mix(float3(0.45, 0.48, 0.54), tint, state.y) * rim *

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Keep a nested compositor's X11 window fitted to its host display."""
+
 import ctypes as c
 import os
 import select
 import sys
-
 
 def main(parent):
     x = c.CDLL("libX11.so.6")
@@ -36,7 +35,7 @@ def main(parent):
     connection = bind("XConnectionNumber", integer, display)
     select_input = bind("XSelectInput", integer, display, window, c.c_long)
     close = bind("XCloseDisplay", integer, display)
-    # Windows can disappear between querying their PID and resizing them.
+
     handler_type = c.CFUNCTYPE(integer, display, c.c_void_p)
     ignore_error = handler_type(lambda *_: 0)
     bind("XSetErrorHandler", c.c_void_p, handler_type)(ignore_error)
@@ -45,7 +44,7 @@ def main(parent):
         return
     root = root_window(d)
     pid_atom = atom(d, b"_NET_WM_PID", 0)
-    select_input(d, root, (1 << 17) | (1 << 19))  # StructureNotify + SubstructureNotify
+    select_input(d, root, (1 << 17) | (1 << 19))
 
     def bounds(w):
         r, left, top = window(), integer(), integer()
@@ -91,7 +90,6 @@ def main(parent):
                 select.select([connection(d)], [], [], 2)
     finally:
         close(d)
-
 
 if __name__ == "__main__":
     main(int(sys.argv[1]))

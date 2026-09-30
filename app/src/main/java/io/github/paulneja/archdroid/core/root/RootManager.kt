@@ -37,7 +37,6 @@ object RootManager {
         Shell.cmd(RootScript.command(script)).to(sink, sink).exec()
     }
 
-    /** Own shell, so long jobs do not block the shared one. */
     suspend fun execStreamingIsolated(
         script: String,
         onLine: (String) -> Unit,

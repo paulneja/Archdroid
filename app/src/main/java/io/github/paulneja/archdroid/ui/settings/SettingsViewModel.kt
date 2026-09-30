@@ -56,7 +56,6 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     private val _activeMounts = MutableStateFlow<List<String>>(emptyList())
     val activeMounts = _activeMounts.asStateFlow()
 
-    /** Result of the last change that touched the live chroot; null when it went through. */
     private val _applyError = MutableStateFlow<String?>(null)
     val applyError = _applyError.asStateFlow()
 
@@ -179,7 +178,6 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** The export is written by root; the app may not own it. */
     private suspend fun deleteAsRoot(file: File) {
         if (!withContext(Dispatchers.IO) { file.delete() } && file.exists()) {
             RootManager.exec("rm -f ${quote(file.absolutePath)}")

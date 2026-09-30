@@ -15,6 +15,7 @@ The project is currently built for `arm64-v8a` devices.
 - Foreground progress notifications with pause, resume, cancel, and retry actions
 - Tabbed terminal with extra keys and adjustable text from 1–32 sp
 - Chrome, Aurora and Ember styles, animated glass controls and an interactive status orb
+- Animated selections, touch lighting, persistent page headings and expandable desktop options
 - Optional performance mode with flat controls and no visual effects or animations
 - Persistent and protected terminal tabs with survival mode
 - Configurable `/proc`, `/sys`, `/dev`, shared storage, and tmpfs mounts

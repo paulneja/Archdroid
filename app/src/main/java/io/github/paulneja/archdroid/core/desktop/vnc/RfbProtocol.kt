@@ -3,7 +3,6 @@ package io.github.paulneja.archdroid.core.desktop.vnc
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/** Pure encoding and decoding of RFB messages, kept separate so it can be unit tested. */
 object RfbProtocol {
     const val VERSION = "RFB 003.008\n"
     const val SECURITY_NONE = 1
@@ -25,16 +24,15 @@ object RfbProtocol {
     const val WHEEL_UP = 8
     const val WHEEL_DOWN = 16
 
-    /** 32 bpp, depth 24, little endian, true colour: bytes arrive as B, G, R, padding. */
     fun setPixelFormat(): ByteArray = ByteBuffer.allocate(20).order(ByteOrder.BIG_ENDIAN).apply {
-        put(0) // message type
+        put(0)
         put(ByteArray(3))
-        put(32) // bits per pixel
-        put(24) // depth
-        put(0) // big endian: no
-        put(1) // true colour
+        put(32)
+        put(24)
+        put(0)
+        put(1)
         putShort(255); putShort(255); putShort(255)
-        put(16); put(8); put(0) // red, green, blue shifts
+        put(16); put(8); put(0)
         put(ByteArray(3))
     }.array()
 
@@ -78,7 +76,6 @@ object RfbProtocol {
         }.array()
     }
 
-    /** B, G, R, X byte quads into opaque ARGB ints. */
     fun decodeRow(src: ByteArray, dst: IntArray, dstOffset: Int, pixels: Int) {
         var s = 0
         for (i in 0 until pixels) {
@@ -90,7 +87,6 @@ object RfbProtocol {
         }
     }
 
-    /** Copies a rectangle within the framebuffer; row order avoids clobbering overlaps. */
     fun copyRect(fb: IntArray, stride: Int, sx: Int, sy: Int, dx: Int, dy: Int, w: Int, h: Int) {
         if (dy <= sy) {
             for (row in 0 until h) System.arraycopy(fb, (sy + row) * stride + sx, fb, (dy + row) * stride + dx, w)

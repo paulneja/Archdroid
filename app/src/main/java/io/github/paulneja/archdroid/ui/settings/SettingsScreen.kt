@@ -1,17 +1,15 @@
 package io.github.paulneja.archdroid.ui.settings
 
+import androidx.compose.runtime.getValue
+import android.app.Activity
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
-import androidx.compose.foundation.layout.size
-import io.github.paulneja.archdroid.data.model.VisualStyle
-import io.github.paulneja.archdroid.data.model.AppSettings
-import io.github.paulneja.archdroid.ui.theme.panelEntrance
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,51 +18,64 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.BatteryChargingFull
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kyant.backdrop.Backdrop
 import io.github.paulneja.archdroid.R
+import io.github.paulneja.archdroid.core.util.AppLanguage
+import io.github.paulneja.archdroid.data.model.AppSettings
+import io.github.paulneja.archdroid.data.model.VisualStyle
 import io.github.paulneja.archdroid.ui.Routes
 import io.github.paulneja.archdroid.ui.components.GlassCard
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.BatteryChargingFull
-import androidx.compose.material.icons.rounded.Memory
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Language
-import android.app.Activity
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.remember
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
-import io.github.paulneja.archdroid.core.util.AppLanguage
-import androidx.compose.ui.text.font.FontFamily
 import io.github.paulneja.archdroid.ui.components.LiquidToggle
+import io.github.paulneja.archdroid.ui.components.MotionIconButton
+import io.github.paulneja.archdroid.ui.components.ScreenPage
+import io.github.paulneja.archdroid.ui.components.SelectionRow
+import io.github.paulneja.archdroid.ui.theme.LocalAppMotion
+import io.github.paulneja.archdroid.ui.theme.panelEntrance
+import io.github.paulneja.archdroid.ui.theme.pressMotion
 
 @Composable
 fun SettingsScreen(
@@ -74,24 +85,10 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp)
-            .padding(top = 16.dp, bottom = 120.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.nav_settings),
-            style = MaterialTheme.typography.displaySmall,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-
+    ScreenPage(stringResource(R.string.nav_settings), Icons.Rounded.Settings) {
         AppearanceCard(backdrop, settings, viewModel)
 
-        GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth()) {
+        GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth(), entranceDelay = 60) {
             SettingsRow(Icons.Rounded.Folder, stringResource(R.string.settings_mounts)) {
                 onOpenSection(Routes.SETTINGS_MOUNTS)
             }
@@ -120,29 +117,8 @@ fun SettingsScreen(
 
         LanguageCard(backdrop)
 
-        GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth()) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Icon(
-                    Icons.Rounded.Palette,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.padding(horizontal = 6.dp))
-                Text(
-                    text = stringResource(R.string.settings_dynamic_color),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
-                LiquidToggle(
-                    checked = settings.dynamicColor,
-                    onCheckedChange = viewModel::updateDynamicColor,
-                    backdrop = backdrop,
-                )
-            }
+        GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth(), entranceDelay = 180) {
+            SwitchRow(stringResource(R.string.settings_dynamic_color), settings.dynamicColor, backdrop, viewModel::updateDynamicColor)
         }
     }
 }
@@ -155,6 +131,9 @@ private fun AppearanceCard(backdrop: Backdrop, settings: AppSettings, viewModel:
         Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             VisualStyle.entries.forEach { style ->
                 val selected = settings.visualStyle == style
+                val motion = LocalAppMotion.current
+                val amount = animateFloatAsState(if (selected) 1f else 0f, if (motion) tween(240) else snap(), label = "style selection")
+                val interaction = remember { MutableInteractionSource() }
                 val color = when (style) {
                     VisualStyle.CHROME -> Color(0xFFCACDD4)
                     VisualStyle.AURORA -> Color(0xFFBBA2FF)
@@ -165,12 +144,12 @@ private fun AppearanceCard(backdrop: Backdrop, settings: AppSettings, viewModel:
                     VisualStyle.AURORA -> R.string.style_aurora
                     VisualStyle.EMBER -> R.string.style_ember
                 })
-                Column(Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
-                    .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = .12f) else Color.Transparent)
-                    .selectable(selected = selected, role = Role.RadioButton, onClick = { viewModel.updateVisualStyle(style) })
+                Column(Modifier.weight(1f).pressMotion(interaction).clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = .12f * amount.value))
+                    .selectable(selected = selected, role = Role.RadioButton, interactionSource = interaction, indication = null, onClick = { viewModel.updateVisualStyle(style) })
                     .padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (!settings.performanceMode) Canvas(Modifier.size(36.dp)) {
+                    if (!settings.performanceMode) Canvas(Modifier.size(36.dp).graphicsLayer { scaleX = .9f + .1f * amount.value; scaleY = scaleX }) {
                         drawCircle(Brush.radialGradient(listOf(Color.White, color, Color(0xFF17171B)),
                             center = center.copy(x = center.x * .6f, y = center.y * .6f), radius = size.width * .75f))
                     }
@@ -188,12 +167,17 @@ private fun AppearanceCard(backdrop: Backdrop, settings: AppSettings, viewModel:
 
 @Composable
 private fun SettingsRow(icon: ImageVector, label: String, onClick: () -> Unit) {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val motion = LocalAppMotion.current
+    val arrow = animateFloatAsState(if (pressed) 1f else 0f, if (motion) tween(180) else snap(), label = "row arrow")
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .pressMotion(source)
             .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
+            .clickable(interactionSource = source, indication = null, onClick = onClick)
             .heightIn(min = 48.dp)
             .padding(vertical = 10.dp),
     ) {
@@ -207,6 +191,7 @@ private fun SettingsRow(icon: ImageVector, label: String, onClick: () -> Unit) {
         )
         Icon(
             Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            modifier = Modifier.graphicsLayer { translationX = arrow.value * 4.dp.toPx() },
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -229,9 +214,9 @@ fun SettingsSubScreen(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 8.dp),
+            modifier = Modifier.panelEntrance().padding(horizontal = 8.dp),
         ) {
-            IconButton(onClick = onBack) {
+            MotionIconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = stringResource(R.string.wizard_back),
@@ -264,9 +249,12 @@ fun SwitchRow(
     backdrop: Backdrop,
     onCheckedChange: (Boolean) -> Unit,
 ) {
+    val source = remember { MutableInteractionSource() }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+        modifier = Modifier.fillMaxWidth().pressMotion(source).clip(RoundedCornerShape(8.dp))
+            .toggleable(value = checked, role = Role.Switch, interactionSource = source, indication = null, onValueChange = onCheckedChange)
+            .heightIn(min = 48.dp),
     ) {
         Text(
             text = label,
@@ -274,14 +262,13 @@ fun SwitchRow(
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
-        LiquidToggle(checked = checked, onCheckedChange = onCheckedChange, backdrop = backdrop)
+        LiquidToggle(checked = checked, onCheckedChange = onCheckedChange, backdrop = backdrop, modifier = Modifier.clearAndSetSemantics { })
     }
 }
 
-/** Shows why the last change could not be applied to the live chroot. */
 @Composable
 fun ApplyErrorCard(backdrop: Backdrop, message: String, onDismiss: () -> Unit) {
-    GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth()) {
+    GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth(), entranceDelay = 120) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = message,
@@ -289,7 +276,7 @@ fun ApplyErrorCard(backdrop: Backdrop, message: String, onDismiss: () -> Unit) {
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.weight(1f),
             )
-            IconButton(onClick = onDismiss) {
+            MotionIconButton(onClick = onDismiss) {
                 Icon(
                     Icons.Rounded.Close,
                     contentDescription = stringResource(R.string.dismiss),
@@ -305,7 +292,7 @@ private fun LanguageCard(backdrop: Backdrop) {
     val context = LocalContext.current
     val activity = context as? Activity
     val current = remember { AppLanguage.current(context) }
-    GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth()) {
+    GlassCard(backdrop = backdrop, modifier = Modifier.fillMaxWidth(), entranceDelay = 120) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 Icons.Rounded.Language,
@@ -323,30 +310,12 @@ private fun LanguageCard(backdrop: Backdrop) {
         AppLanguage.Choice.entries.forEach { choice ->
             val label = when (choice) {
                 AppLanguage.Choice.SYSTEM -> stringResource(R.string.language_system)
-                // Language names are shown in their own language on purpose.
+
                 AppLanguage.Choice.ENGLISH -> "English"
                 AppLanguage.Choice.SPANISH -> "Español"
             }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable(enabled = activity != null && choice != current) {
-                        activity?.let { AppLanguage.apply(it, choice) }
-                    }
-                    .padding(vertical = 10.dp, horizontal = 4.dp),
-            ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (choice == current) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
-                if (choice == current) {
-                    Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                }
+            SelectionRow(label, choice == current, enabled = activity != null) {
+                if (choice != current) activity?.let { AppLanguage.apply(it, choice) }
             }
         }
     }

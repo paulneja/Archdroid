@@ -8,7 +8,6 @@ import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Socket
 
-/** RFB 3.8, no auth (Xvnc listens on localhost only), Raw + CopyRect. */
 class RfbClient(private val listener: Listener) {
 
     interface Listener {
@@ -52,12 +51,12 @@ class RfbClient(private val listener: Listener) {
         output.flush()
         if (input.readInt() != 0) throw IOException("security handshake failed: ${readString()}")
 
-        output.writeByte(1) // shared
+        output.writeByte(1)
         output.flush()
         width = input.readUnsignedShort()
         height = input.readUnsignedShort()
-        input.skipBytes(16) // server pixel format; we impose ours below
-        readString() // desktop name
+        input.skipBytes(16)
+        readString()
         allocate()
 
         synchronized(writeLock) {
@@ -69,7 +68,6 @@ class RfbClient(private val listener: Listener) {
         listener.onResize(width, height)
     }
 
-    /** Blocks, dispatching server messages until the connection closes. */
     fun run() {
         while (true) {
             when (val type = input.readUnsignedByte()) {

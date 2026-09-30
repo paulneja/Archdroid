@@ -20,12 +20,11 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     val altActive = MutableStateFlow(false)
     val shiftActive = MutableStateFlow(false)
 
-    @SuppressLint("StaticFieldLeak") // Cleared in detachView when the AndroidView is released.
+    @SuppressLint("StaticFieldLeak")
     private var viewRef: TerminalView? = null
     private var keyboardRequested = false
     val viewClient = ArchTerminalViewClient(app, { viewRef }, modifierState)
 
-    /** Index of a protected tab waiting for the user to confirm its closing. */
     val pendingProtectedClose = MutableStateFlow<Int?>(null)
 
     init {

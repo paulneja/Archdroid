@@ -1,5 +1,7 @@
 package io.github.paulneja.archdroid.ui.settings
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -7,16 +9,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -29,6 +28,7 @@ import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.core.chroot.MountPlan
 import io.github.paulneja.archdroid.data.model.DevMode
 import io.github.paulneja.archdroid.ui.components.GlassCard
+import io.github.paulneja.archdroid.ui.components.MotionIconButton
 import kotlin.math.roundToInt
 
 @Composable
@@ -54,7 +54,7 @@ fun MountsScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = { viewModel.refreshMounts() }) {
+                MotionIconButton(onClick = { viewModel.refreshMounts() }) {
                     Icon(
                         Icons.Rounded.Refresh,
                         contentDescription = stringResource(R.string.mounts_refresh),

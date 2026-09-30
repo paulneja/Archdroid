@@ -24,7 +24,6 @@ import com.kyant.backdrop.isRuntimeShaderSupported
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-/** A soft glow that follows the finger across the glass while it is pressed. */
 class InteractiveHighlight(
     val animationScope: CoroutineScope,
     val position: (size: Size, offset: Offset) -> Offset = { _, offset -> offset },
@@ -38,7 +37,6 @@ class InteractiveHighlight(
 
     private var startPosition = Offset.Zero
 
-    // Runtime shaders arrived in Android 13; older versions get a flat glow.
     private val shader =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && isRuntimeShaderSupported()) {
             RuntimeShader(GLOW_SHADER)

@@ -20,7 +20,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-/** Process-wide owner of terminal sessions. Must be used on the main thread. */
 class SessionStore(
     private val context: Context,
     private val chroot: ChrootController,
@@ -58,7 +57,6 @@ class SessionStore(
     private val _broken = MutableStateFlow<List<String>>(emptyList())
     val broken: StateFlow<List<String>> = _broken.asStateFlow()
 
-    /** Bumped whenever a tab's protection changes, so observers can recount. */
     private val _protectionChanges = MutableStateFlow(0)
     val protectionChanges: StateFlow<Int> = _protectionChanges.asStateFlow()
 
@@ -81,7 +79,6 @@ class SessionStore(
 
     fun activeTab(): Tab? = _tabs.value.getOrNull(_activeIndex.value)
 
-    /** Mounts and opens the first shell the first time the terminal is shown. */
     fun ensureStarted(onFirstSession: () -> Unit = {}) {
         if (_tabs.value.isNotEmpty()) return
         startSession(onFirstSession)
@@ -111,7 +108,7 @@ class SessionStore(
                     }
                     return@launch
                 }
-                // Avoid spawning a session that cannot enter the rootfs.
+
                 val missing = chroot.missingEssentials()
                 if (missing.isNotEmpty()) {
                     _broken.value = missing
@@ -148,7 +145,7 @@ class SessionStore(
         val tab = Tab(session = session, processIdentity = CompletableDeferred())
         _tabs.value = _tabs.value + tab
         _activeIndex.value = _tabs.value.lastIndex
-        // The process spawns on first size; give it one when no view is attached.
+
         view?.attachSession(session) ?: session.updateSize(80, 24)
         scope.launch {
             tab.processIdentity.complete(runCatching { SessionProcessTree.readIdentity(awaitPid(session)) })

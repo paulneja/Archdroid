@@ -9,7 +9,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // JitPack builds arbitrary GitHub repos; only let it serve the two libraries that need it.
+
         maven("https://jitpack.io") {
             content {
                 includeGroup("com.github.topjohnwu.libsu")
@@ -21,7 +21,6 @@ dependencyResolutionManagement {
 rootProject.name = "ArchDroid"
 include(":app")
 
-// Termux:X11's X server, embedded as the desktop display (GPLv3, pinned git submodule).
 include(":lorie")
 project(":lorie").projectDir = file("third_party/termux-x11/lorie")
 include(":shell-loader:stub")

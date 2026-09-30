@@ -1,6 +1,5 @@
 package io.github.paulneja.archdroid.core.chroot
 
-/** Values written into the rootfs /etc files must be well formed. */
 object EnvValidation {
     private val HOSTNAME_LABEL = Regex("[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?")
     private val IPV4 = Regex("""((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)""")

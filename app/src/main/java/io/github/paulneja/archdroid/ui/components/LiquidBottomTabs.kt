@@ -1,6 +1,5 @@
 // Ported from Kyant0/AndroidLiquidGlass (catalog/components/LiquidBottomTabs.kt and
-// LiquidBottomTab.kt), Apache License 2.0. The tilt-following highlight mirrors the floating bar
-// of the SukiSU-Ultra manager, re-implemented here on top of the backdrop library.
+// LiquidBottomTab.kt), Apache License 2.0.
 
 package io.github.paulneja.archdroid.ui.components
 
@@ -199,7 +198,6 @@ fun LiquidBottomTabs(
         )
         val pillHighlightStyle = HighlightStyle.Default(angle = lightAngle + HIGHLIGHT_OFFSET_DEGREES + 90f)
 
-        // The accent copy must not be clickable: it sits on top and would swallow drags.
         val tabs: @Composable RowScope.(interactive: Boolean) -> Unit = { interactive ->
             items.forEachIndexed { index, item ->
                 LiquidBottomTab(onClick = { activate(index) }, interactive = interactive) {
@@ -216,7 +214,6 @@ fun LiquidBottomTabs(
             }
         }
 
-        // Base glass panel with the real, tappable tabs.
         Row(
             Modifier
                 .selectableGroup()
@@ -278,7 +275,6 @@ fun LiquidBottomTabs(
             }
         }
 
-        // The selection pill.
         Box(
             Modifier
                 .clearAndSetSemantics {}

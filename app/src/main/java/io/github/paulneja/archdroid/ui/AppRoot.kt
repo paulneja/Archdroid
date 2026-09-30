@@ -1,34 +1,37 @@
 package io.github.paulneja.archdroid.ui
 
+import androidx.compose.runtime.getValue
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.ui.graphics.graphicsLayer
-import io.github.paulneja.archdroid.ui.theme.LocalAppMotion
-import io.github.paulneja.archdroid.ui.theme.LocalPerformanceMode
-import kotlin.math.absoluteValue
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DesktopWindows
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -45,12 +48,6 @@ import io.github.paulneja.archdroid.core.chroot.ChrootStatus
 import io.github.paulneja.archdroid.ui.components.LiquidBottomTabs
 import io.github.paulneja.archdroid.ui.components.LiquidTabItem
 import io.github.paulneja.archdroid.ui.desktop.DesktopScreen
-import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.rounded.DesktopWindows
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 import io.github.paulneja.archdroid.ui.home.HomeScreen
 import io.github.paulneja.archdroid.ui.install.InstallWizardScreen
 import io.github.paulneja.archdroid.ui.onboarding.RootCheckScreen
@@ -58,15 +55,20 @@ import io.github.paulneja.archdroid.ui.settings.AboutScreen
 import io.github.paulneja.archdroid.ui.settings.BackupScreen
 import io.github.paulneja.archdroid.ui.settings.BehaviorScreen
 import io.github.paulneja.archdroid.ui.settings.EnvScreen
+import io.github.paulneja.archdroid.ui.settings.InitScreen
 import io.github.paulneja.archdroid.ui.settings.MountsScreen
 import io.github.paulneja.archdroid.ui.settings.ProtectionScreen
-import io.github.paulneja.archdroid.ui.settings.InitScreen
 import io.github.paulneja.archdroid.ui.settings.SettingsScreen
 import io.github.paulneja.archdroid.ui.settings.UserScreen
 import io.github.paulneja.archdroid.ui.terminal.TerminalScreen
 import io.github.paulneja.archdroid.ui.theme.ArchDroidTheme
 import io.github.paulneja.archdroid.ui.theme.BgDeepBottom
 import io.github.paulneja.archdroid.ui.theme.BgDeepTop
+import io.github.paulneja.archdroid.ui.theme.LocalAppMotion
+import io.github.paulneja.archdroid.ui.theme.LocalPageVisible
+import io.github.paulneja.archdroid.ui.theme.LocalPerformanceMode
+import kotlin.math.absoluteValue
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppRoot(
@@ -78,7 +80,7 @@ fun AppRoot(
 
     ArchDroidTheme(dynamicColor = settings.dynamicColor, visualStyle = settings.visualStyle, performanceMode = settings.performanceMode) {
         val background = Brush.verticalGradient(listOf(BgDeepTop, BgDeepBottom))
-        // Keep glass outside its sampled layer to avoid a RenderNode cycle.
+
         val backgroundBackdrop = rememberLayerBackdrop { drawRect(background) }
         val rootState by viewModel.rootState.collectAsStateWithLifecycle()
 
@@ -97,7 +99,6 @@ fun AppRoot(
     }
 }
 
-/** Top-level pages shown in the pager, in bar order. */
 enum class MainPage { HOME, TERMINAL, DESKTOP, SETTINGS }
 
 @Composable
@@ -107,7 +108,7 @@ private fun MainScaffold(
     requestedRoute: String?,
     onRouteConsumed: () -> Unit,
 ) {
-    // The bar must remain a sibling of the layer it samples.
+
     val contentBackdrop = rememberLayerBackdrop { drawContent() }
     val navController = rememberNavController()
     val status by viewModel.chroot.status.collectAsStateWithLifecycle()
@@ -138,7 +139,7 @@ private fun MainScaffold(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val currentPage = MainPage.entries[pagerState.currentPage]
-    // The terminal keeps its keys and IME clear of the menu bar. Desktop viewers open separately.
+
     val barVisible = currentRoute == Routes.MAIN &&
         pagerState.targetPage != MainPage.TERMINAL.ordinal
 
@@ -155,14 +156,14 @@ private fun MainScaffold(
             popExitTransition = { if (motion) fadeOut(tween(160)) + slideOutHorizontally(tween(240)) { it / 14 } else ExitTransition.None },
         ) {
             composable(Routes.MAIN) {
-                // Leaving a full-screen page with back returns to Home instead of closing anything.
+
                 BackHandler(enabled = currentPage != MainPage.HOME) { showPage(MainPage.HOME) }
                 HorizontalPager(
                     state = pagerState,
                     userScrollEnabled = false,
                     modifier = Modifier.fillMaxSize(),
                 ) { index ->
-                    // Keep native terminal drawing outside page transform layers.
+
                     Box(Modifier.fillMaxSize().then(if (motion && index != MainPage.TERMINAL.ordinal) Modifier.graphicsLayer {
                         if (motion) {
                             val distance = ((pagerState.currentPage - index) + pagerState.currentPageOffsetFraction).absoluteValue.coerceIn(0f, 1f)
@@ -171,26 +172,28 @@ private fun MainScaffold(
                             scaleY = scaleX
                         }
                     } else Modifier)) {
-                        when (MainPage.entries[index]) {
-                            MainPage.HOME -> HomeScreen(
-                                onOpenTerminal = { showPage(MainPage.TERMINAL) },
-                                onOpenDesktop = { showPage(MainPage.DESKTOP) },
-                                onOpenSettings = { showPage(MainPage.SETTINGS) },
-                                onInstall = { navController.navigate(Routes.INSTALL) },
-                                visible = pagerState.settledPage == MainPage.HOME.ordinal,
-                            )
-                            MainPage.TERMINAL -> TerminalScreen(
-                                visible = pagerState.settledPage == MainPage.TERMINAL.ordinal,
-                                onClose = { showPage(MainPage.HOME) },
-                            )
-                            MainPage.DESKTOP -> DesktopScreen(
-                                backdrop = backgroundBackdrop,
-                                onClose = { showPage(MainPage.HOME) },
-                            )
-                            MainPage.SETTINGS -> SettingsScreen(
-                                backdrop = backgroundBackdrop,
-                                onOpenSection = { navController.navigate(it) },
-                            )
+                        CompositionLocalProvider(LocalPageVisible provides (pagerState.settledPage == index && currentRoute == Routes.MAIN)) {
+                            when (MainPage.entries[index]) {
+                                MainPage.HOME -> HomeScreen(
+                                    onOpenTerminal = { showPage(MainPage.TERMINAL) },
+                                    onOpenDesktop = { showPage(MainPage.DESKTOP) },
+                                    onOpenSettings = { showPage(MainPage.SETTINGS) },
+                                    onInstall = { navController.navigate(Routes.INSTALL) },
+                                    visible = pagerState.settledPage == MainPage.HOME.ordinal,
+                                )
+                                MainPage.TERMINAL -> TerminalScreen(
+                                    visible = pagerState.settledPage == MainPage.TERMINAL.ordinal,
+                                    onClose = { showPage(MainPage.HOME) },
+                                )
+                                MainPage.DESKTOP -> DesktopScreen(
+                                    backdrop = backgroundBackdrop,
+                                    onClose = { showPage(MainPage.HOME) },
+                                )
+                                MainPage.SETTINGS -> SettingsScreen(
+                                    backdrop = backgroundBackdrop,
+                                    onOpenSection = { navController.navigate(it) },
+                                )
+                            }
                         }
                     }
                 }

@@ -31,7 +31,6 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val _terminalWorking = MutableStateFlow(false)
     val terminalWorking = _terminalWorking.asStateFlow()
 
-    /** Home alone samples activity. No background timer or frame-by-frame root queries. */
     suspend fun watchActivity() {
         var sample = 0
         while (currentCoroutineContext().isActive) {

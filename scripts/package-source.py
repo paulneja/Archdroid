@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pack tracked source, including every initialized submodule."""
+
 import io
 from pathlib import Path
 import subprocess

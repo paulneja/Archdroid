@@ -1,6 +1,5 @@
 package io.github.paulneja.archdroid.core.util
 
-/** Uses BusyBox tar when available because toybox tar can lose rootfs ownership and modes. */
 object RootTar {
     val RESOLVE: String = buildString {
         appendLine("TAR=\"tar\"")

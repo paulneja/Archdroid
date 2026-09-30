@@ -46,7 +46,6 @@ class InstallCoordinator(
         _state.value = InstallState.Queued
     }
 
-    /** False after the process died: the password and choices only ever live in memory. */
     fun hasConfig(): Boolean = synchronized(lock) { config != null }
 
     fun startQueued() = synchronized(lock) {

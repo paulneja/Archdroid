@@ -1,6 +1,5 @@
 package io.github.paulneja.archdroid.core.util
 
-/** Quotes user-controlled values for root shell scripts. */
 object ShellQuote {
 
     private val IDENTIFIER = Regex("[A-Za-z_][A-Za-z0-9_]*")

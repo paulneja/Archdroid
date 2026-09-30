@@ -1,5 +1,7 @@
 package io.github.paulneja.archdroid.ui.settings
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Spacer
@@ -10,18 +12,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Save
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
-import io.github.paulneja.archdroid.ui.components.LinearWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -31,7 +29,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kyant.backdrop.Backdrop
 import io.github.paulneja.archdroid.R
 import io.github.paulneja.archdroid.ui.components.GlassCard
+import io.github.paulneja.archdroid.ui.components.LinearWavyProgressIndicator
 import io.github.paulneja.archdroid.ui.components.LiquidButton
+import io.github.paulneja.archdroid.ui.components.MotionAlertDialog
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -171,7 +171,7 @@ fun BackupScreen(
     }
 
     if (showImportConfirm) {
-        AlertDialog(
+        MotionAlertDialog(
             onDismissRequest = { showImportConfirm = false },
             title = { Text(stringResource(R.string.backup_import_confirm_title)) },
             text = { Text(stringResource(R.string.backup_import_confirm_body)) },
@@ -192,7 +192,7 @@ fun BackupScreen(
     }
 
     if (showResetConfirm) {
-        AlertDialog(
+        MotionAlertDialog(
             onDismissRequest = { showResetConfirm = false },
             title = { Text(stringResource(R.string.reset_title)) },
             text = { Text(stringResource(R.string.reset_confirm_body)) },
@@ -213,7 +213,7 @@ fun BackupScreen(
     }
 
     if (showResetFinal) {
-        AlertDialog(
+        MotionAlertDialog(
             onDismissRequest = { showResetFinal = false },
             title = { Text(stringResource(R.string.reset_confirm_final_title)) },
             text = { Text(stringResource(R.string.reset_confirm_final_body)) },

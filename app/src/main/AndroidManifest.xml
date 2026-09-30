@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Only ArchDroid (and root, which holds every permission) may drive the embedded X server. -->
     <permission
         android:name="${applicationId}.permission.X11"
         android:protectionLevel="signature" />
@@ -72,7 +71,6 @@
             android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- Embedded Termux:X11: the desktop opens from ArchDroid, never as a second launcher entry. -->
         <activity
             android:name="com.termux.x11.MainActivity"
             android:label="@string/nav_desktop"
@@ -89,7 +87,7 @@
             tools:replace="android:exported">
             <intent-filter tools:node="removeAll" />
         </activity>
-        <!-- Registered at runtime by ArchDroidApp instead; see registerX11Receiver. -->
+
         <receiver
             android:name="com.termux.x11.LorieApp$Receiver"
             tools:node="remove" />

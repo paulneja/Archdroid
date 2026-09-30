@@ -164,7 +164,7 @@ class ChrootInstaller(private val context: Context) {
 
         executeFollowingAllowedRedirects(mode, request, Step.DOWNLOAD).use { response ->
             if (DownloadResume.partialIsComplete(response.code, already)) {
-                // The previous attempt got every byte but died before the rename; VERIFY decides.
+
                 moveIntoPlace(partial)
                 onProgress(Progress(Step.DOWNLOAD, url, already, already))
                 return
@@ -175,7 +175,6 @@ class ChrootInstaller(private val context: Context) {
             val body = response.body
                 ?: throw InstallException(Step.DOWNLOAD, "empty body from $url")
 
-            // HTTP 206 confirms that the server accepted the range request.
             val resumed = response.code == 206 && already > 0
             val base = if (resumed) already else 0L
             if (!resumed && already > 0) partial.delete()
@@ -356,7 +355,6 @@ class ChrootInstaller(private val context: Context) {
             if (!it.isSuccess) throw InstallException(Step.BASE_CONFIG, it.err.joinToString())
         }
 
-        // Android kernels do not provide pacman's Landlock sandbox.
         onProgress(Progress(Step.BASE_CONFIG, "pacman.conf"))
         RootManager.exec(
             *PacmanConf.androidCompatCommands("${ChrootPaths.CHROOT_DIR}/etc/pacman.conf")
@@ -376,7 +374,7 @@ class ChrootInstaller(private val context: Context) {
         chrootBash(Step.BASE_CONFIG, "pacman-key --init && pacman-key --populate archlinuxarm")
         onProgress(Progress(Step.BASE_CONFIG, "pacman -Syu"))
         chrootBash(Step.BASE_CONFIG, "pacman -Syu --noconfirm")
-        // The image ships root/root and alarm/alarm with sshd enabled.
+
         RootManager.execStreaming(DefaultAccounts.lockScript(ChrootPaths.CHROOT_DIR), log)
     }
 

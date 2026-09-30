@@ -7,7 +7,6 @@ object SystemdContainer {
 
     const val CGROUP = "${ProcessShield.CGROUP}/systemd"
 
-    /** Host-side: boots systemd detached; util-linux unshare comes from the rootfs. */
     fun bootCommand(chrootDir: String): String {
         val c = quote(chrootDir)
         val init = "mount -t cgroup2 cgroup2 /sys/fs/cgroup && " +
@@ -29,7 +28,6 @@ object SystemdContainer {
         """.trimIndent()
     }
 
-    /** Enters every namespace of PID 1 so the login gets a real logind session. */
     fun loginCommand(chrootDir: String, pid1: String, user: String?): String {
         val target = if (user == null) "/bin/bash -l" else "/bin/su - ${quote(user)}"
         return "exec chroot ${quote(chrootDir)} /usr/bin/nsenter --target $pid1 --all $target"

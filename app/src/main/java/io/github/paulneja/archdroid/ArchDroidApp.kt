@@ -10,7 +10,6 @@ import io.github.paulneja.archdroid.di.ServiceLocator
 import com.topjohnwu.superuser.Shell
 import io.github.paulneja.archdroid.core.notify.ArchDroidNotifications
 
-/** Extends Termux:X11's application class, which owns the embedded X server's preferences. */
 class ArchDroidApp : LorieApp() {
 
     override fun attachBaseContext(base: Context) {
@@ -27,11 +26,10 @@ class ArchDroidApp : LorieApp() {
         )
         ArchDroidNotifications.createChannels(this)
         registerX11Receiver()
-        // Only runs root commands once the user turned OOM protection on.
+
         ServiceLocator.protection(this).startWatchdog()
     }
 
-    /** Manifest receivers are skipped once the package was stopped (MediaTek policy). */
     private fun registerX11Receiver() {
         val filter = IntentFilter().apply {
             X11_ACTIONS.forEach(::addAction)

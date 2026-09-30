@@ -1,6 +1,5 @@
 package io.github.paulneja.archdroid.core.chroot
 
-/** Applies the pacman settings needed by an Android chroot. */
 object PacmanConf {
 
     private val OPTIONS = listOf("DisableSandboxFilesystem", "DisableSandboxSyscalls")
@@ -10,7 +9,7 @@ object PacmanConf {
     fun androidCompatCommands(confPath: String): List<String> {
         val f = confPath
         val cmds = mutableListOf<String>()
-        // CheckSpace cannot match chroot paths against the host mount table.
+
         cmds += "sed -i -E 's/^[[:space:]]*(CheckSpace)/#\\1/' $f"
         for (option in OPTIONS) {
             cmds += "sed -i -E 's/^#[[:space:]]*($option)[[:space:]]*\$/\\1/' $f"
