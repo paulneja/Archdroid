@@ -162,14 +162,15 @@ private fun MainScaffold(
                     userScrollEnabled = false,
                     modifier = Modifier.fillMaxSize(),
                 ) { index ->
-                    Box(Modifier.fillMaxSize().graphicsLayer {
+                    // Keep native terminal drawing outside page transform layers.
+                    Box(Modifier.fillMaxSize().then(if (motion && index != MainPage.TERMINAL.ordinal) Modifier.graphicsLayer {
                         if (motion) {
                             val distance = ((pagerState.currentPage - index) + pagerState.currentPageOffsetFraction).absoluteValue.coerceIn(0f, 1f)
                             alpha = 1f - distance * .35f
                             scaleX = 1f - distance * .035f
                             scaleY = scaleX
                         }
-                    }) {
+                    } else Modifier)) {
                         when (MainPage.entries[index]) {
                             MainPage.HOME -> HomeScreen(
                                 onOpenTerminal = { showPage(MainPage.TERMINAL) },
