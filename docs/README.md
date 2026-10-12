@@ -10,7 +10,6 @@
 
 - [Background work and notifications](design/background-work-design.md)
 - [Install notifications and terminal close](design/install-notifications-and-terminal-close.md)
-- [Implementation record](development/install-notifications-and-terminal-close.md)
 
 ## Releases
 

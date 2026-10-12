@@ -16,6 +16,9 @@ This product includes third-party software:
 - Bouncy Castle OpenPGP 1.86 (bcpg, bcprov and bcutil) — https://www.bouncycastle.org
   MIT; LICENSES/Bouncy-Castle-1.86.md is the original META-INF/LICENSE.md from the 1.86 JARs
 - Backdrop and Shapes by Kyant — https://github.com/Kyant0 — Apache License 2.0
+- UI motion helpers adapted from the AndroidLiquidGlass catalog by Kyant
+  (app/src/main/java/.../ui/components/LiquidBottomTabs.kt and ui/components/liquid)
+  https://github.com/Kyant0/AndroidLiquidGlass — Apache License 2.0
 - OkHttp — https://github.com/square/okhttp — Apache License 2.0
 - AndroidX and Jetpack Compose — https://developer.android.com/jetpack — Apache License 2.0
 - docker-systemctl-replacement (app/src/main/assets/init, modified September 2026:
